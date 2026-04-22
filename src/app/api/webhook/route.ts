@@ -3,9 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { processarMensagem, MSG_MIDIA } from "@/lib/agent/agent";
 import { enviarMensagem, getMediaBase64 } from "@/lib/agent/evolution";
 import { transcreverAudioBase64 } from "@/lib/agent/audio";
-import { enqueue } from "@/lib/agent/queue";
 import type { EvolutionWebhookPayload } from "@/lib/agent/types";
-
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const token = req.headers.get("x-webhook-token");
@@ -53,7 +51,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         const base64 = await getMediaBase64(key.id);
         const textoTranscrito = await transcreverAudioBase64(base64, ".ogg");
         console.log(`[Webhook] Áudio transcrito [${whatsapp}]: ${textoTranscrito}`);
-        await enqueue(whatsapp, () => processarMensagem(whatsapp, textoTranscrito, pushName));
+        await processarMensagem(whatsapp, textoTranscrito, pushName);
       } catch (err) {
         console.error(`[Webhook] Erro ao transcrever áudio de ${whatsapp}:`, err);
         await enviarMensagem(
@@ -80,9 +78,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const textoFinal = texto.trim();
   after(async () => {
-    await enqueue(whatsapp, () => processarMensagem(whatsapp, textoFinal, pushName));
+    await processarMensagem(whatsapp, textoFinal, pushName);
   });
 
   return NextResponse.json({ received: true });
 }
-
