@@ -32,6 +32,17 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+!**/.env.example
+
+# agent
+agent/node_modules/
+agent/dist/
+
+# claude code
+.claude/
+.agents/
+skills-lock.json
 
 # vercel
 .vercel
