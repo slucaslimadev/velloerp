@@ -7,7 +7,7 @@ import type { EvolutionWebhookPayload } from "@/lib/agent/types";
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const token = req.headers.get("x-webhook-token");
-  if (process.env.WEBHOOK_TOKEN && token !== process.env.WEBHOOK_TOKEN) {
+  if (process.env.WEBHOOK_TOKEN?.trim() && token !== process.env.WEBHOOK_TOKEN.trim()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const whatsapp = key.remoteJid.replace("@s.whatsapp.net", "").replace("@g.us", "");
 
-  const allowedNumber = process.env.ALLOWED_WHATSAPP;
+  const allowedNumber = process.env.ALLOWED_WHATSAPP?.trim();
   if (allowedNumber && whatsapp !== allowedNumber) {
     console.log(`[Webhook] Número ${whatsapp} bloqueado (modo teste). Ignorando.`);
     return NextResponse.json({ received: true });
