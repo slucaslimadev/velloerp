@@ -6,13 +6,14 @@ export const dynamic = "force-dynamic";
 export default async function ConfiguracoesPage() {
   const supabase = await createClient();
 
-  const [configRes, conversasRes, leadsRes] = await Promise.all([
-    supabase.from("configuracoes").select("valor").eq("id", "ia_ativa").maybeSingle(),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const configRaw = await (supabase.from("configuracoes") as any).select("valor").eq("id", "ia_ativa").maybeSingle();
+  const [conversasRes, leadsRes] = await Promise.all([
     supabase.from("conversas").select("id, finalizada, criado_em, whatsapp, nome_contato"),
     supabase.from("leads").select("id, nome, classificacao, criado_em"),
   ]);
 
-  const iaAtiva = configRes.data?.valor !== "false";
+  const iaAtiva = (configRaw.data as { valor: string } | null)?.valor !== "false";
   const conversas = conversasRes.data ?? [];
   const leads = leadsRes.data ?? [];
 

@@ -94,8 +94,8 @@ export function LeadsClient({ leads: initialLeads }: Props) {
     const supabase = createClient();
     const newStatus = !currentStatus;
     
-    // Atualiza remota
-    await supabase.from("leads").update({ ia_ativa: newStatus }).eq("id", leadId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from("leads") as any).update({ ia_ativa: newStatus }).eq("id", leadId);
     
     // Atualiza local
     if (selectedLead?.id === leadId) {

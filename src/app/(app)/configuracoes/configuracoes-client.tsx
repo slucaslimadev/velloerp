@@ -40,9 +40,10 @@ export function ConfiguracoesClient({ iaAtivaInicial, conversas, totalLeads }: P
     setSalvando(true);
     const supabase = createClient();
     const novoValor = !iaAtiva;
-    await supabase
-      .from("configuracoes")
-      .upsert({ id: "ia_ativa", valor: novoValor ? "true" : "false" });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from("configuracoes") as any)
+      .update({ valor: novoValor ? "true" : "false" })
+      .eq("id", "ia_ativa");
     setIaAtiva(novoValor);
     setSalvando(false);
   }

@@ -81,6 +81,11 @@ export interface Interacao {
   responsavel: string | null;
 }
 
+export interface Configuracao {
+  id: string;
+  valor: string;
+}
+
 type PartialRecord<T> = Partial<T> & Record<string, unknown>;
 
 export type Database = {
@@ -117,9 +122,9 @@ export type Database = {
         Relationships: [];
       };
       configuracoes: {
-        Row: { id: string; valor: string };
-        Insert: { id: string; valor: string };
-        Update: { id?: string; valor?: string } & Record<string, unknown>;
+        Row: Configuracao;
+        Insert: PartialRecord<Configuracao>;
+        Update: PartialRecord<Configuracao>;
         Relationships: [];
       };
     };
