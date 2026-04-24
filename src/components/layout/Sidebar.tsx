@@ -10,16 +10,18 @@ import {
   SignOut,
   X,
   Gear,
+  ChatCircleDots,
 } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { VelloLogo } from "@/components/shared/VelloLogo";
 
 const navItems = [
-  { href: "/",              label: "Dashboard",    icon: ChartBar  },
-  { href: "/leads",         label: "Leads",        icon: Users     },
-  { href: "/kanban",        label: "Kanban",       icon: Kanban    },
-  { href: "/clientes",      label: "Clientes",     icon: Briefcase },
-  { href: "/configuracoes", label: "Configurações",icon: Gear      },
+  { href: "/",              label: "Dashboard",    icon: ChartBar      },
+  { href: "/leads",         label: "Leads",        icon: Users         },
+  { href: "/kanban",        label: "Kanban",       icon: Kanban        },
+  { href: "/clientes",      label: "Clientes",     icon: Briefcase     },
+  { href: "/conversas",     label: "Conversas",    icon: ChatCircleDots},
+  { href: "/configuracoes", label: "Configurações",icon: Gear          },
 ];
 
 interface SidebarProps {
