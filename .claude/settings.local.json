@@ -2,7 +2,37 @@
   "permissions": {
     "allow": [
       "Bash(npx create-next-app@latest . --typescript --tailwind --app --src-dir --import-alias \"@/*\" --no-eslint --yes)",
-      "Bash(npx shadcn@latest init --defaults --yes)"
+      "Bash(npx shadcn@latest init --defaults --yes)",
+      "Bash(npm install *)",
+      "Bash(npx shadcn@latest add table badge input select dialog sheet dropdown-menu tooltip avatar skeleton --yes)",
+      "Bash(npm run *)",
+      "Bash(claude mcp *)",
+      "Bash(npx skills *)",
+      "mcp__plugin_supabase_supabase__get_publishable_keys",
+      "mcp__plugin_supabase_supabase__list_tables",
+      "mcp__plugin_supabase_supabase__apply_migration",
+      "Bash(npx tsc *)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' -H 'apikey: 78181D0EBA1A-4DA7-9C1B-6BD4255FE936' https://evolutionapi.lumintech.site/instance/fetchInstances)",
+      "Bash(curl -s -H 'apikey: 78181D0EBA1A-4DA7-9C1B-6BD4255FE936' https://evolutionapi.lumintech.site/instance/fetchInstances)",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); [print\\(f\\\\\"  {i.get\\('name'\\)} — estado: {i.get\\('connectionStatus','?'\\)}\\\\\"\\) for i in \\(data if isinstance\\(data,list\\) else [data]\\)]\")",
+      "Bash(curl -s -X GET -H 'apikey: 78181D0EBA1A-4DA7-9C1B-6BD4255FE936' https://evolutionapi.lumintech.site/webhook/find/VELLO)",
+      "Bash(curl -s -X PUT -H 'apikey: 78181D0EBA1A-4DA7-9C1B-6BD4255FE936' -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(curl -s -X POST -H 'apikey: 78181D0EBA1A-4DA7-9C1B-6BD4255FE936' -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(curl -s -X POST https://evolutionapi.lumintech.site/webhook/set/VELLO -H 'apikey: 78181D0EBA1A-4DA7-9C1B-6BD4255FE936' -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :3001)",
+      "Bash(taskkill /PID 23640 /F)",
+      "Bash(cmd /c \"taskkill /PID 23640 /F\")",
+      "Bash(echo \"exit: $?\")",
+      "Bash(cmd /c \"taskkill /F /PID 23640\")",
+      "Bash(powershell -Command \"Stop-Process -Id 23640 -Force\")",
+      "Bash(curl -s http://localhost:3001/health)",
+      "Bash(curl -s https://evolutionapi.lumintech.site/instance/fetchInstances -H \"apikey: 78181D0EBA1A-4DA7-9C1B-6BD4255FE936\")",
+      "Bash(python -m json.tool)",
+      "Bash(curl -s -X POST http://localhost:3001/webhook -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(powershell -Command \"Stop-Process -Id 22192 -Force\")",
+      "mcp__plugin_supabase_supabase__execute_sql",
+      "Bash(node -e ' *)"
     ]
   }
 }

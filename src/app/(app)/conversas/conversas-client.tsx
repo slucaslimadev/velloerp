@@ -8,6 +8,8 @@ import {
   ArrowLeft,
   CheckCircle,
   Circle,
+  Plus,
+  X,
 } from "@phosphor-icons/react";
 import type { Conversa, Lead, MensagemConversa } from "@/types/database";
 import { format, isToday, isYesterday } from "date-fns";
@@ -54,6 +56,10 @@ export function ConversasClient({ initialConversas, leads }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+  const [showNovaConversa, setShowNovaConversa] = useState(false);
+  const [novaWhatsapp, setNovaWhatsapp] = useState("");
+  const [novaMensagem, setNovaMensagem] = useState("Olá! Sou a Velly, assistente da VELLO Inteligência Artificial. Como posso te ajudar hoje? 😊");
+  const [enviando, setEnviando] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const leadNames = useMemo(() => {
@@ -114,6 +120,30 @@ export function ConversasClient({ initialConversas, leads }: Props) {
     setMobileView("chat");
   }
 
+  async function iniciarConversa() {
+    const numero = novaWhatsapp.replace(/\D/g, "");
+    if (!numero || !novaMensagem.trim()) return;
+    setEnviando(true);
+    try {
+      const res = await fetch("/api/conversas/iniciar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ whatsapp: numero, mensagem: novaMensagem.trim() }),
+      });
+      const json = await res.json();
+      if (json.ok && json.conversa) {
+        setConversas((prev) => [json.conversa as Conversa, ...prev]);
+        setSelectedId(json.conversa.id);
+        setMobileView("chat");
+        setShowNovaConversa(false);
+        setNovaWhatsapp("");
+        setNovaMensagem("Olá! Sou a Velly, assistente da VELLO Inteligência Artificial. Como posso te ajudar hoje? 😊");
+      }
+    } finally {
+      setEnviando(false);
+    }
+  }
+
   return (
     <div className="flex h-full overflow-hidden">
 
@@ -124,12 +154,19 @@ export function ConversasClient({ initialConversas, leads }: Props) {
       >
         {/* Header + search */}
         <div className="px-4 pt-4 pb-3 flex-shrink-0" style={{ borderBottom: "1px solid var(--border-dim)" }}>
-          <h1
-            className="text-base font-semibold mb-3"
-            style={{ color: "var(--text-1)", fontFamily: "var(--ff-title)" }}
-          >
-            Conversas WhatsApp
-          </h1>
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-base font-semibold" style={{ color: "var(--text-1)", fontFamily: "var(--ff-title)" }}>
+              Conversas WhatsApp
+            </h1>
+            <button
+              onClick={() => setShowNovaConversa(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+              style={{ background: "var(--cyan)", color: "#0a0d14" }}
+              title="Nova conversa"
+            >
+              <Plus size={14} weight="bold" /> Nova
+            </button>
+          </div>
           <div className="relative">
             <MagnifyingGlass
               size={15}
@@ -311,6 +348,61 @@ export function ConversasClient({ initialConversas, leads }: Props) {
           </>
         )}
       </div>
+      {/* Modal: Nova Conversa */}
+      {showNovaConversa && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          onClick={(e) => e.target === e.currentTarget && setShowNovaConversa(false)}>
+          <div className="w-full max-w-md rounded-2xl overflow-hidden flex flex-col"
+            style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-dim)" }}>
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid var(--border-dim)" }}>
+              <h2 className="text-base font-semibold" style={{ color: "var(--text-1)", fontFamily: "var(--ff-title)" }}>
+                Nova Conversa
+              </h2>
+              <button onClick={() => setShowNovaConversa(false)} style={{ color: "var(--text-3)" }}><X size={18} /></button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-3)" }}>
+                  Número WhatsApp *
+                </label>
+                <input
+                  className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+                  style={{ background: "var(--bg-surface)", border: "1px solid var(--border-dim)", color: "var(--text-1)", fontFamily: "var(--ff-body)" }}
+                  placeholder="5561999999999 (com DDD e DDI)"
+                  value={novaWhatsapp}
+                  onChange={(e) => setNovaWhatsapp(e.target.value)}
+                />
+                <p className="text-xs mt-1" style={{ color: "var(--text-3)" }}>Formato: código país + DDD + número (ex: 5561999999999)</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-3)" }}>
+                  Mensagem inicial
+                </label>
+                <textarea
+                  className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+                  style={{ background: "var(--bg-surface)", border: "1px solid var(--border-dim)", color: "var(--text-1)", fontFamily: "var(--ff-body)", resize: "none" }}
+                  rows={4}
+                  value={novaMensagem}
+                  onChange={(e) => setNovaMensagem(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 flex justify-end gap-3" style={{ borderTop: "1px solid var(--border-dim)" }}>
+              <button onClick={() => setShowNovaConversa(false)} className="px-4 py-2 rounded-xl text-sm"
+                style={{ color: "var(--text-2)", background: "var(--bg-surface)", border: "1px solid var(--border-dim)" }}>
+                Cancelar
+              </button>
+              <button onClick={iniciarConversa} disabled={!novaWhatsapp.trim() || !novaMensagem.trim() || enviando}
+                className="px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50"
+                style={{ background: "var(--cyan)", color: "#0a0d14" }}>
+                {enviando ? "Enviando..." : "Iniciar Conversa"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
