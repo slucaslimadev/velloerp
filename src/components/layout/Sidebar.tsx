@@ -11,6 +11,7 @@ import {
   X,
   Gear,
   ChatCircleDots,
+  Robot,
 } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { VelloLogo } from "@/components/shared/VelloLogo";
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/kanban",        label: "Kanban",       icon: Kanban        },
   { href: "/clientes",      label: "Clientes",     icon: Briefcase     },
   { href: "/conversas",     label: "Conversas",    icon: ChatCircleDots},
+  { href: "/agentes",       label: "Agentes Demo", icon: Robot         },
   { href: "/configuracoes", label: "Configurações",icon: Gear          },
 ];
 
