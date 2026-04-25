@@ -14,6 +14,7 @@ import { ptBR } from "date-fns/locale";
 interface Props {
   initialConversas: Conversa[];
   leads: Pick<Lead, "id" | "nome" | "whatsapp" | "ia_ativa">[];
+  initialWhatsapp?: string | null;
 }
 
 const AVATAR_COLORS = ["#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6", "#EC4899", "#14B8A6"];
@@ -61,7 +62,7 @@ function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
-export function ConversasClient({ initialConversas, leads }: Props) {
+export function ConversasClient({ initialConversas, leads, initialWhatsapp }: Props) {
   const supabase = useMemo(() => createClient(), []);
   const [conversas, setConversas] = useState<Conversa[]>(initialConversas);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -115,6 +116,22 @@ export function ConversasClient({ initialConversas, leads }: Props) {
   }
 
   const selected = conversas.find((c) => c.id === selectedId) ?? null;
+
+  // Auto-select conversation from URL param (?whatsapp=...)
+  useEffect(() => {
+    if (!initialWhatsapp) return;
+    const numero = initialWhatsapp.replace(/\D/g, "");
+    const conv = conversas.find((c) => c.whatsapp === numero);
+    if (conv) {
+      setSelectedId(conv.id);
+      setMobileView("chat");
+    } else {
+      // No conversation yet — open nova conversa modal pre-filled
+      setNovaWhatsapp(numero);
+      setShowNovaConversa(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Realtime subscription
   useEffect(() => {

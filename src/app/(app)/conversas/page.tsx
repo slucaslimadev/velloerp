@@ -5,8 +5,13 @@ import type { Conversa, Lead } from "@/types/database";
 
 export const dynamic = "force-dynamic";
 
-export default async function ConversasPage() {
-  // Service key para bypassar RLS na tabela conversas (sem política de leitura)
+export default async function ConversasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ whatsapp?: string }>;
+}) {
+  const { whatsapp: initialWhatsapp } = await searchParams;
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const adminDb = createClient<any>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,6 +28,7 @@ export default async function ConversasPage() {
     <ConversasClient
       initialConversas={(conversas ?? []) as Conversa[]}
       leads={(leads ?? []) as Pick<Lead, "id" | "nome" | "whatsapp" | "ia_ativa">[]}
+      initialWhatsapp={initialWhatsapp ?? null}
     />
   );
 }

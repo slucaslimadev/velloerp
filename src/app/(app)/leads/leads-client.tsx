@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   MagnifyingGlass, Funnel, X, WhatsappLogo, EnvelopeSimple,
   Calendar, User, Buildings, Tag, Star, ChatCircle, Phone,
   VideoCamera, Robot, Plus, SquaresFour, Rows, Trash,
-  WarningCircle,
+  WarningCircle, ArrowsDownUp,
 } from "@phosphor-icons/react";
 import type { Lead, LeadClassificacao, LeadStatus, Interacao, Conversa } from "@/types/database";
 import { ClassificacaoBadge } from "@/components/shared/ClassificacaoBadge";
@@ -13,6 +14,10 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+type SortKey = "data-desc" | "data-asc" | "pontuacao-desc" | "pontuacao-asc" | "classificacao-desc";
+
+const CLASSIF_RANK: Record<string, number> = { Quente: 4, Morno: 3, Frio: 2, Desqualificado: 1 };
 
 const CLASSIFICACOES: LeadClassificacao[] = ["Quente", "Morno", "Frio", "Desqualificado"];
 const STATUS_LIST: LeadStatus[] = [
@@ -44,12 +49,14 @@ const DEFAULT_FORM: FormState = {
 };
 
 export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
+  const router = useRouter();
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [search, setSearch] = useState("");
   const [filterClassificacao, setFilterClassificacao] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("data-desc");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [interacoes, setInteracoes] = useState<Interacao[]>([]);
@@ -78,6 +85,25 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
       return matchSearch && matchClass && matchStatus && matchFrom && matchTo;
     });
   }, [leads, search, filterClassificacao, filterStatus, filterDateFrom, filterDateTo]);
+
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      switch (sortKey) {
+        case "data-desc": return new Date(b.criado_em).getTime() - new Date(a.criado_em).getTime();
+        case "data-asc":  return new Date(a.criado_em).getTime() - new Date(b.criado_em).getTime();
+        case "pontuacao-desc": return (b.pontuacao ?? 0) - (a.pontuacao ?? 0);
+        case "pontuacao-asc":  return (a.pontuacao ?? 0) - (b.pontuacao ?? 0);
+        case "classificacao-desc":
+          return (CLASSIF_RANK[b.classificacao ?? ""] ?? 0) - (CLASSIF_RANK[a.classificacao ?? ""] ?? 0);
+        default: return 0;
+      }
+    });
+  }, [filtered, sortKey]);
+
+  function irParaWhatsApp(lead: Lead) {
+    if (!lead.whatsapp) return;
+    router.push(`/conversas?whatsapp=${lead.whatsapp}`);
+  }
 
   async function openLead(lead: Lead) {
     setSelectedLead(lead);
@@ -108,11 +134,21 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
   async function salvarNovoLead() {
     setSalvando(true);
     const supabase = createClient();
+    const n = (v: string): string | null => v.trim() || null;
     const payload = {
-      ...form,
-      pontuacao: form.pontuacao ? Number(form.pontuacao) : null,
+      nome:              n(form.nome),
+      whatsapp:          n(form.whatsapp),
+      email:             n(form.email),
+      segmento:          n(form.segmento),
+      tamanho_empresa:   n(form.tamanho_empresa),
+      dor_principal:     n(form.dor_principal),
+      classificacao:     n(form.classificacao),
+      status:            form.status || "Novo",
+      pontuacao:         form.pontuacao ? Number(form.pontuacao) : null,
+      orcamento:         n(form.orcamento),
+      prazo:             n(form.prazo),
+      observacoes:       n(form.observacoes),
       tentativas_requalificacao: 0,
-      ia_ativa: true,
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase.from("leads") as any).insert(payload).select().single();
@@ -120,6 +156,8 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
       setLeads((prev) => [data as Lead, ...prev]);
       setShowNovoLead(false);
       setForm(DEFAULT_FORM);
+    } else if (error) {
+      console.error("[salvarNovoLead]", error.message, error.details);
     }
     setSalvando(false);
   }
@@ -238,6 +276,20 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
               style={{ color: filterDateTo ? "var(--text-1)" : "var(--text-3)", fontFamily: "var(--ff-body)", colorScheme: "dark" }} />
           </div>
 
+          {/* Sort */}
+          <div className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-dim)" }}>
+            <ArrowsDownUp size={15} style={{ color: "var(--text-3)" }} />
+            <select value={sortKey} onChange={(e) => setSortKey(e.target.value as SortKey)}
+              className="bg-transparent text-sm outline-none cursor-pointer"
+              style={{ color: "var(--text-2)", fontFamily: "var(--ff-body)" }}>
+              <option value="data-desc"    style={{ background: "var(--bg-elevated)" }}>Data (recente)</option>
+              <option value="data-asc"     style={{ background: "var(--bg-elevated)" }}>Data (antigo)</option>
+              <option value="pontuacao-desc" style={{ background: "var(--bg-elevated)" }}>Pontuação (maior)</option>
+              <option value="pontuacao-asc"  style={{ background: "var(--bg-elevated)" }}>Pontuação (menor)</option>
+              <option value="classificacao-desc" style={{ background: "var(--bg-elevated)" }}>Classificação</option>
+            </select>
+          </div>
+
           {hasFilter && (
             <button onClick={clearFilters} className="flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-medium"
               style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.20)", color: "#EF4444" }}>
@@ -254,20 +306,23 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
-                      {["Nome / Contato", "Segmento", "Empresa", "Pontuação", "Classificação", "Status", "Data"].map((h) => (
+                      {["Data", "Nome / Contato", "Segmento", "Empresa", "Pontuação", "Classificação", "Status"].map((h) => (
                         <th key={h} className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider"
                           style={{ color: "var(--text-3)", fontFamily: "var(--ff-body)" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.length === 0 ? (
+                    {sorted.length === 0 ? (
                       <tr><td colSpan={7} className="py-16 text-center" style={{ color: "var(--text-3)" }}>Nenhum lead encontrado.</td></tr>
-                    ) : filtered.map((lead) => (
+                    ) : sorted.map((lead) => (
                       <tr key={lead.id} onClick={() => openLead(lead)} className="cursor-pointer transition-colors"
                         style={{ borderBottom: "1px solid rgba(65,190,234,0.05)", background: selectedLead?.id === lead.id ? "rgba(65,190,234,0.06)" : "transparent" }}
                         onMouseEnter={(e) => { if (selectedLead?.id !== lead.id) (e.currentTarget as HTMLElement).style.background = "rgba(65,190,234,0.03)"; }}
                         onMouseLeave={(e) => { if (selectedLead?.id !== lead.id) (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                        <td className="px-5 py-4 text-xs font-medium" style={{ color: "var(--text-2)", whiteSpace: "nowrap" }}>
+                          {format(new Date(lead.criado_em), "dd/MM/yyyy", { locale: ptBR })}
+                        </td>
                         <td className="px-5 py-4">
                           <p className="font-medium text-white leading-tight">{lead.nome ?? "—"}</p>
                           {lead.whatsapp && (
@@ -283,9 +338,6 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
                         </td>
                         <td className="px-5 py-4"><ClassificacaoBadge classificacao={lead.classificacao} /></td>
                         <td className="px-5 py-4"><StatusBadge status={lead.status} /></td>
-                        <td className="px-5 py-4 text-xs" style={{ color: "var(--text-3)" }}>
-                          {format(new Date(lead.criado_em), "dd/MM/yy", { locale: ptBR })}
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -294,9 +346,9 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filtered.length === 0 ? (
+              {sorted.length === 0 ? (
                 <p className="col-span-full py-16 text-center text-sm" style={{ color: "var(--text-3)" }}>Nenhum lead encontrado.</p>
-              ) : filtered.map((lead) => (
+              ) : sorted.map((lead) => (
                 <LeadCard key={lead.id} lead={lead} selected={selectedLead?.id === lead.id} onClick={() => openLead(lead)} />
               ))}
             </div>
@@ -331,6 +383,21 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
               </div>
               <ClassificacaoBadge classificacao={selectedLead.classificacao} />
               <StatusBadge status={selectedLead.status} />
+            </div>
+
+            {/* WhatsApp button */}
+            {selectedLead.whatsapp && (
+              <button
+                onClick={() => irParaWhatsApp(selectedLead)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.20)", color: "#22C55E" }}
+              >
+                <WhatsappLogo size={17} weight="fill" />
+                Ir para o WhatsApp
+              </button>
+            )}
+
+            <div className="flex items-center gap-3 flex-wrap">
               <button onClick={() => toggleIaAtiva(selectedLead.id, selectedLead.ia_ativa)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ml-auto transition-colors"
                 style={{
