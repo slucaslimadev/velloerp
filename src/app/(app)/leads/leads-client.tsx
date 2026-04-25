@@ -4,7 +4,8 @@ import { useState, useMemo } from "react";
 import {
   MagnifyingGlass, Funnel, X, WhatsappLogo, EnvelopeSimple,
   Calendar, User, Buildings, Tag, Star, ChatCircle, Phone,
-  VideoCamera, Robot, Plus, SquaresFour, Rows,
+  VideoCamera, Robot, Plus, SquaresFour, Rows, Trash,
+  WarningCircle,
 } from "@phosphor-icons/react";
 import type { Lead, LeadClassificacao, LeadStatus, Interacao, Conversa } from "@/types/database";
 import { ClassificacaoBadge } from "@/components/shared/ClassificacaoBadge";
@@ -58,6 +59,8 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
   const [showNovoLead, setShowNovoLead] = useState(false);
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [salvando, setSalvando] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deletando, setDeletando] = useState(false);
 
   const hasFilter = !!(filterClassificacao || filterStatus || filterDateFrom || filterDateTo);
 
@@ -119,6 +122,17 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
       setForm(DEFAULT_FORM);
     }
     setSalvando(false);
+  }
+
+  async function deletarLead() {
+    if (!selectedLead) return;
+    setDeletando(true);
+    const supabase = createClient();
+    await supabase.from("leads").delete().eq("id", selectedLead.id);
+    setLeads((prev) => prev.filter((l) => l.id !== selectedLead.id));
+    setSelectedLead(null);
+    setConfirmDelete(false);
+    setDeletando(false);
   }
 
   function clearFilters() {
@@ -416,6 +430,48 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
                   </div>
                 )}
             </LeadSection>
+
+            {/* Danger zone */}
+            <div className="pt-2">
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.15)", color: "#EF4444" }}
+              >
+                <Trash size={15} /> Excluir Lead
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm delete modal */}
+      {confirmDelete && selectedLead && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-dim)" }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(239,68,68,0.12)" }}>
+                <WarningCircle size={22} style={{ color: "#EF4444" }} />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold" style={{ color: "var(--text-1)", fontFamily: "var(--ff-head)" }}>Excluir Lead</h3>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>Esta ação não pode ser desfeita.</p>
+              </div>
+            </div>
+            <p className="text-sm mb-5" style={{ color: "var(--text-2)" }}>
+              Tem certeza que deseja excluir <strong style={{ color: "var(--text-1)" }}>{selectedLead.nome ?? "este lead"}</strong>?
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDelete(false)} className="flex-1 py-2 rounded-xl text-sm"
+                style={{ background: "var(--bg-surface)", border: "1px solid var(--border-dim)", color: "var(--text-2)" }}>
+                Cancelar
+              </button>
+              <button onClick={deletarLead} disabled={deletando} className="flex-1 py-2 rounded-xl text-sm font-semibold disabled:opacity-60"
+                style={{ background: "#EF4444", color: "#fff" }}>
+                {deletando ? "Excluindo..." : "Excluir"}
+              </button>
+            </div>
           </div>
         </div>
       )}

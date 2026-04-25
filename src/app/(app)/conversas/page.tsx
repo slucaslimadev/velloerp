@@ -16,13 +16,13 @@ export default async function ConversasPage() {
 
   const [{ data: conversas }, { data: leads }] = await Promise.all([
     adminDb.from("conversas").select("*").order("atualizado_em", { ascending: false }),
-    supabase.from("leads").select("id, nome, whatsapp"),
+    supabase.from("leads").select("id, nome, whatsapp, ia_ativa"),
   ]);
 
   return (
     <ConversasClient
       initialConversas={(conversas ?? []) as Conversa[]}
-      leads={(leads ?? []) as Pick<Lead, "id" | "nome" | "whatsapp">[]}
+      leads={(leads ?? []) as Pick<Lead, "id" | "nome" | "whatsapp" | "ia_ativa">[]}
     />
   );
 }
