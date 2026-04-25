@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   MagnifyingGlass, Funnel, X, WhatsappLogo, EnvelopeSimple,
   Calendar, User, Buildings, Tag, Star, ChatCircle, Phone,
   VideoCamera, Robot, Plus, SquaresFour, Rows, Trash,
-  WarningCircle, ArrowsDownUp,
+  WarningCircle, ArrowsDownUp, MagnifyingGlassPlus, Check,
 } from "@phosphor-icons/react";
 import type { Lead, LeadClassificacao, LeadStatus, Interacao, Conversa } from "@/types/database";
 import { ClassificacaoBadge } from "@/components/shared/ClassificacaoBadge";
@@ -69,6 +69,27 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deletando, setDeletando] = useState(false);
 
+  // Prospecção via Apify
+  const [showProspeccao, setShowProspeccao] = useState(false);
+  const [prospTab, setProspTab] = useState<"prospectar" | "proposta">("prospectar");
+  const [prospBusca, setProspBusca] = useState("");
+  const [prospQtd, setProspQtd] = useState("10");
+  const [buscando, setBuscando] = useState(false);
+  const [prospResultados, setProspResultados] = useState<Partial<Lead>[]>([]);
+  const [prospSelecionados, setProspSelecionados] = useState<Set<number>>(new Set());
+
+  interface PropostaItem {
+    lead: Partial<Lead>;
+    mensagem: string;
+    status: "aguardando" | "gerando" | "pronto" | "erro" | "sem-telefone";
+  }
+  const [propostas, setPropostas] = useState<PropostaItem[]>([]);
+  const [gerandoAll, setGerandoAll] = useState(false);
+  const [enviandoAll, setEnviandoAll] = useState(false);
+  const [envioProgress, setEnvioProgress] = useState<{ atual: number; total: number } | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const hasFilter = !!(filterClassificacao || filterStatus || filterDateFrom || filterDateTo);
 
   const filtered = useMemo(() => {
@@ -99,6 +120,127 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
       }
     });
   }, [filtered, sortKey]);
+
+  async function buscarLeadsApify() {
+    if (!prospBusca.trim()) return;
+    setBuscando(true);
+    setProspResultados([]);
+    setProspSelecionados(new Set());
+    try {
+      const res = await fetch("/api/apify/buscar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ busca: prospBusca, quantidade: Number(prospQtd) }),
+      });
+      const json = await res.json();
+      if (json.leads) {
+        setProspResultados(json.leads);
+        setProspSelecionados(new Set(json.leads.map((_: Partial<Lead>, i: number) => i)));
+      }
+    } finally {
+      setBuscando(false);
+    }
+  }
+
+  function toggleSelecaoProsp(i: number) {
+    setProspSelecionados((prev) => {
+      const next = new Set(prev);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
+  }
+
+  function irParaPropostas() {
+    const selecionados = prospResultados.filter((_, i) => prospSelecionados.has(i));
+    setPropostas(selecionados.map((lead) => ({
+      lead,
+      mensagem: "",
+      status: lead.whatsapp ? "aguardando" : "sem-telefone",
+    })));
+    setProspTab("proposta");
+  }
+
+  async function gerarProposta(index: number) {
+    const item = propostas[index];
+    if (!item || item.status === "sem-telefone") return;
+    setPropostas((prev) => prev.map((p, i) => i === index ? { ...p, status: "gerando" } : p));
+    try {
+      const res = await fetch("/api/apify/gerar-proposta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome: item.lead.nome, segmento: item.lead.segmento, observacoes: item.lead.observacoes }),
+      });
+      const json = await res.json();
+      if (json.mensagem) {
+        setPropostas((prev) => prev.map((p, i) => i === index ? { ...p, mensagem: json.mensagem, status: "pronto" } : p));
+      } else {
+        setPropostas((prev) => prev.map((p, i) => i === index ? { ...p, status: "erro" } : p));
+      }
+    } catch {
+      setPropostas((prev) => prev.map((p, i) => i === index ? { ...p, status: "erro" } : p));
+    }
+  }
+
+  async function gerarTodasPropostas() {
+    setGerandoAll(true);
+    for (let i = 0; i < propostas.length; i++) {
+      if (propostas[i].status === "sem-telefone") continue;
+      await gerarProposta(i);
+    }
+    setGerandoAll(false);
+  }
+
+  async function importarEEnviar() {
+    if (enviandoAll) return;
+    setEnviandoAll(true);
+    const supabase = createClient();
+
+    const comMensagem = propostas.filter((p) => p.lead.whatsapp && p.mensagem.trim() && p.status === "pronto");
+    const semMensagem = propostas.filter((p) => p.status === "sem-telefone" || !p.mensagem.trim());
+
+    // Import all leads
+    const inseridos: Lead[] = [];
+    for (const item of [...comMensagem, ...semMensagem]) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase.from("leads") as any).insert(item.lead).select().single();
+      if (data) inseridos.push(data as Lead);
+    }
+    setLeads((prev) => [...inseridos, ...prev]);
+
+    // Send messages with random delay
+    setEnvioProgress({ atual: 0, total: comMensagem.length });
+    for (let i = 0; i < comMensagem.length; i++) {
+      const item = comMensagem[i];
+      await fetch("/api/conversas/iniciar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ whatsapp: item.lead.whatsapp, mensagem: item.mensagem }),
+      });
+      setEnvioProgress({ atual: i + 1, total: comMensagem.length });
+
+      if (i < comMensagem.length - 1) {
+        const delaySec = Math.floor(Math.random() * (90 - 20 + 1)) + 20;
+        setCountdown(delaySec);
+        countdownRef.current = setInterval(() => {
+          setCountdown((prev) => {
+            if (prev === null || prev <= 1) { clearInterval(countdownRef.current!); return null; }
+            return prev - 1;
+          });
+        }, 1000);
+        await new Promise((r) => setTimeout(r, delaySec * 1000));
+        clearInterval(countdownRef.current!);
+        setCountdown(null);
+      }
+    }
+
+    setEnviandoAll(false);
+    setEnvioProgress(null);
+    setShowProspeccao(false);
+    setProspTab("prospectar");
+    setProspBusca("");
+    setProspResultados([]);
+    setPropostas([]);
+  }
 
   function irParaWhatsApp(lead: Lead) {
     if (!lead.whatsapp) return;
@@ -219,6 +361,15 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
                 </button>
               ))}
             </div>
+            {/* Prospectar */}
+            <button
+              onClick={() => setShowProspeccao(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+              style={{ background: "var(--bg-surface)", border: "1px solid var(--border-dim)", color: "var(--text-2)", fontFamily: "var(--ff-body)" }}
+            >
+              <MagnifyingGlassPlus size={16} weight="bold" />
+              Prospectar
+            </button>
             {/* Novo Lead */}
             <button
               onClick={() => setShowNovoLead(true)}
@@ -539,6 +690,242 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
                 {deletando ? "Excluindo..." : "Excluir"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Prospecção — 2 abas */}
+      {showProspeccao && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          onClick={(e) => e.target === e.currentTarget && !buscando && !enviandoAll && setShowProspeccao(false)}>
+          <div className="w-full max-w-2xl rounded-2xl overflow-hidden flex flex-col"
+            style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-dim)", maxHeight: "90vh" }}>
+
+            {/* Header com abas */}
+            <div className="flex-shrink-0" style={{ borderBottom: "1px solid var(--border-dim)" }}>
+              <div className="flex items-center justify-between px-6 pt-4 pb-0">
+                <h2 className="text-base font-semibold" style={{ color: "var(--text-1)", fontFamily: "var(--ff-head)" }}>
+                  Prospecção — Google Maps
+                </h2>
+                <button onClick={() => { setShowProspeccao(false); setProspTab("prospectar"); }}
+                  style={{ color: "var(--text-3)" }} disabled={enviandoAll}>
+                  <X size={18} />
+                </button>
+              </div>
+              {/* Tabs */}
+              <div className="flex px-6 mt-3">
+                {(["prospectar", "proposta"] as const).map((tab, i) => (
+                  <button key={tab} onClick={() => !enviandoAll && setProspTab(tab)}
+                    className="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+                    style={{
+                      borderColor: prospTab === tab ? "var(--cyan)" : "transparent",
+                      color: prospTab === tab ? "var(--cyan)" : "var(--text-3)",
+                    }}>
+                    {i + 1}. {tab === "prospectar" ? "Prospectar" : "Gerar Propostas"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* ── ABA 1: Prospectar ── */}
+            {prospTab === "prospectar" && (
+              <>
+                <div className="px-6 py-4 flex-shrink-0 flex gap-3 items-end"
+                  style={{ borderBottom: "1px solid var(--border-dim)" }}>
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-3)" }}>Busca *</label>
+                    <input className="w-full rounded-xl px-3 py-2 text-sm outline-none" style={inputStyle}
+                      placeholder='Ex: "agência de marketing Brasília", "clínica SP"'
+                      value={prospBusca} onChange={(e) => setProspBusca(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && buscarLeadsApify()} disabled={buscando} />
+                  </div>
+                  <div className="w-24">
+                    <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-3)" }}>Qtd.</label>
+                    <select className="w-full rounded-xl px-3 py-2 text-sm outline-none" style={inputStyle}
+                      value={prospQtd} onChange={(e) => setProspQtd(e.target.value)} disabled={buscando}>
+                      {[5, 10, 20, 30, 50].map((n) => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </div>
+                  <button onClick={buscarLeadsApify} disabled={!prospBusca.trim() || buscando}
+                    className="px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 flex items-center gap-2 flex-shrink-0"
+                    style={{ background: "var(--cyan)", color: "#0a0d14" }}>
+                    {buscando
+                      ? <><span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" /> Buscando...</>
+                      : <><MagnifyingGlass size={15} weight="bold" /> Buscar</>}
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto">
+                  {buscando && (
+                    <div className="py-16 flex flex-col items-center gap-3" style={{ color: "var(--text-3)" }}>
+                      <span className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin inline-block" style={{ borderColor: "var(--cyan) transparent var(--cyan) var(--cyan)" }} />
+                      <p className="text-sm">Buscando no Google Maps... aguarde</p>
+                    </div>
+                  )}
+                  {!buscando && prospResultados.length === 0 && prospBusca && (
+                    <p className="py-16 text-center text-sm" style={{ color: "var(--text-3)" }}>Nenhum resultado. Tente outro termo.</p>
+                  )}
+                  {!buscando && prospResultados.length > 0 && (
+                    <>
+                      <div className="px-6 py-3 flex items-center justify-between"
+                        style={{ borderBottom: "1px solid var(--border-dim)" }}>
+                        <p className="text-xs" style={{ color: "var(--text-3)" }}>{prospSelecionados.size} de {prospResultados.length} selecionados</p>
+                        <button className="text-xs" style={{ color: "var(--cyan)" }}
+                          onClick={() => setProspSelecionados(
+                            prospSelecionados.size === prospResultados.length ? new Set() : new Set(prospResultados.map((_, i) => i))
+                          )}>
+                          {prospSelecionados.size === prospResultados.length ? "Desmarcar todos" : "Selecionar todos"}
+                        </button>
+                      </div>
+                      {prospResultados.map((lead, i) => (
+                        <div key={i} onClick={() => toggleSelecaoProsp(i)}
+                          className="flex items-start gap-3 px-6 py-3.5 cursor-pointer transition-colors"
+                          style={{ borderBottom: "1px solid var(--border-dim)", background: prospSelecionados.has(i) ? "rgba(65,190,234,0.05)" : "transparent" }}>
+                          <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5"
+                            style={{ background: prospSelecionados.has(i) ? "var(--cyan)" : "var(--bg-surface)", border: `1px solid ${prospSelecionados.has(i) ? "var(--cyan)" : "var(--border-dim)"}` }}>
+                            {prospSelecionados.has(i) && <Check size={12} weight="bold" color="#0a0d14" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="text-sm font-semibold truncate" style={{ color: "var(--text-1)" }}>{lead.nome}</p>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <ClassificacaoBadge classificacao={lead.classificacao as LeadClassificacao} />
+                                <span className="text-xs font-bold" style={{ color: "var(--cyan)" }}>{lead.pontuacao} pts</span>
+                              </div>
+                            </div>
+                            <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>{lead.segmento}</p>
+                            <div className="flex items-center gap-3 mt-1 flex-wrap">
+                              {lead.whatsapp
+                                ? <span className="text-xs flex items-center gap-1" style={{ color: "#22C55E" }}><WhatsappLogo size={11} />{lead.whatsapp}</span>
+                                : <span className="text-xs" style={{ color: "#F59E0B" }}>Sem telefone</span>}
+                              <span className="text-xs truncate max-w-xs" style={{ color: "var(--text-3)" }}>{lead.observacoes?.split("\n")[0]}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+
+                {prospResultados.length > 0 && !buscando && (
+                  <div className="px-6 py-4 flex justify-end gap-3 flex-shrink-0" style={{ borderTop: "1px solid var(--border-dim)" }}>
+                    <button onClick={() => setShowProspeccao(false)} className="px-4 py-2 rounded-xl text-sm"
+                      style={{ color: "var(--text-2)", background: "var(--bg-surface)", border: "1px solid var(--border-dim)" }}>
+                      Cancelar
+                    </button>
+                    <button onClick={irParaPropostas} disabled={prospSelecionados.size === 0}
+                      className="px-5 py-2 rounded-xl text-sm font-semibold disabled:opacity-50"
+                      style={{ background: "var(--cyan)", color: "#0a0d14" }}>
+                      Próximo: Gerar Propostas ({prospSelecionados.size}) →
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* ── ABA 2: Propostas ── */}
+            {prospTab === "proposta" && (
+              <>
+                {/* Actions bar */}
+                <div className="px-6 py-3 flex items-center justify-between flex-shrink-0"
+                  style={{ borderBottom: "1px solid var(--border-dim)" }}>
+                  <p className="text-xs" style={{ color: "var(--text-3)" }}>
+                    {propostas.filter(p => p.status === "pronto").length} de {propostas.filter(p => p.status !== "sem-telefone").length} geradas
+                  </p>
+                  <button onClick={gerarTodasPropostas} disabled={gerandoAll || enviandoAll}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
+                    style={{ background: "rgba(65,190,234,0.12)", color: "var(--cyan)", border: "1px solid rgba(65,190,234,0.2)" }}>
+                    {gerandoAll
+                      ? <><span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" /> Gerando...</>
+                      : "✨ Gerar todas com IA"}
+                  </button>
+                </div>
+
+                {/* Proposals list */}
+                <div className="flex-1 overflow-y-auto">
+                  {propostas.map((item, i) => (
+                    <div key={i} className="px-6 py-4" style={{ borderBottom: "1px solid var(--border-dim)" }}>
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate" style={{ color: "var(--text-1)" }}>{item.lead.nome}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs" style={{ color: "var(--text-3)" }}>{item.lead.segmento}</span>
+                            {item.lead.whatsapp
+                              ? <span className="text-xs flex items-center gap-1" style={{ color: "#22C55E" }}><WhatsappLogo size={10} />{item.lead.whatsapp}</span>
+                              : <span className="text-xs" style={{ color: "#F59E0B" }}>⚠ Sem telefone</span>}
+                          </div>
+                        </div>
+                        {item.status !== "sem-telefone" && (
+                          <button onClick={() => gerarProposta(i)} disabled={item.status === "gerando" || enviandoAll}
+                            className="text-xs px-2.5 py-1.5 rounded-lg flex-shrink-0 disabled:opacity-50"
+                            style={{ background: "var(--bg-surface)", border: "1px solid var(--border-dim)", color: "var(--text-2)" }}>
+                            {item.status === "gerando"
+                              ? <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
+                              : item.status === "pronto" ? "Regerar" : "Gerar"}
+                          </button>
+                        )}
+                      </div>
+
+                      {item.status === "sem-telefone" && (
+                        <p className="text-xs py-2 px-3 rounded-lg" style={{ background: "rgba(245,158,11,0.08)", color: "#F59E0B", border: "1px solid rgba(245,158,11,0.15)" }}>
+                          Sem número de telefone — lead será importado mas sem envio de mensagem.
+                        </p>
+                      )}
+                      {item.status === "aguardando" && (
+                        <p className="text-xs" style={{ color: "var(--text-3)" }}>Clique em "Gerar" ou use "Gerar todas com IA"</p>
+                      )}
+                      {item.status === "gerando" && (
+                        <p className="text-xs animate-pulse" style={{ color: "var(--cyan)" }}>Pesquisando e gerando mensagem...</p>
+                      )}
+                      {item.status === "erro" && (
+                        <p className="text-xs" style={{ color: "#EF4444" }}>Erro ao gerar. Tente novamente.</p>
+                      )}
+                      {item.status === "pronto" && (
+                        <textarea
+                          value={item.mensagem}
+                          onChange={(e) => setPropostas(prev => prev.map((p, idx) => idx === i ? { ...p, mensagem: e.target.value } : p))}
+                          disabled={enviandoAll}
+                          rows={5}
+                          className="w-full rounded-xl px-3 py-2 text-sm outline-none resize-none mt-1"
+                          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-dim)", color: "var(--text-1)", fontFamily: "var(--ff-body)" }}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Footer com progresso */}
+                <div className="px-6 py-4 flex-shrink-0" style={{ borderTop: "1px solid var(--border-dim)" }}>
+                  {enviandoAll && (
+                    <div className="mb-3">
+                      {/* Progress bar */}
+                      <div className="w-full rounded-full h-1.5 mb-2" style={{ background: "var(--bg-surface)" }}>
+                        <div className="h-1.5 rounded-full transition-all" style={{ background: "var(--cyan)", width: `${((envioProgress?.atual ?? 0) / (envioProgress?.total ?? 1)) * 100}%` }} />
+                      </div>
+                      <p className="text-xs text-center" style={{ color: "var(--text-3)" }}>
+                        {countdown !== null
+                          ? `Mensagem ${envioProgress?.atual ?? 0}/${envioProgress?.total ?? 0} enviada — próxima em ${countdown}s`
+                          : `Enviando ${envioProgress?.atual ?? 0} de ${envioProgress?.total ?? 0}...`}
+                      </p>
+                    </div>
+                  )}
+                  <div className="flex justify-end gap-3">
+                    <button onClick={() => setProspTab("prospectar")} disabled={enviandoAll} className="px-4 py-2 rounded-xl text-sm"
+                      style={{ color: "var(--text-2)", background: "var(--bg-surface)", border: "1px solid var(--border-dim)" }}>
+                      ← Voltar
+                    </button>
+                    <button onClick={importarEEnviar}
+                      disabled={enviandoAll || propostas.every(p => p.status === "aguardando" || p.status === "gerando")}
+                      className="px-5 py-2 rounded-xl text-sm font-semibold disabled:opacity-50"
+                      style={{ background: "var(--cyan)", color: "#0a0d14" }}>
+                      {enviandoAll
+                        ? "Enviando..."
+                        : `Importar e Enviar (${propostas.filter(p => p.lead.whatsapp && p.status === "pronto").length} com msg)`}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
