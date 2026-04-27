@@ -19,6 +19,11 @@ interface Props {
 
 const AVATAR_COLORS = ["#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6", "#EC4899", "#14B8A6"];
 
+const TAGS_PREDEFINIDAS = [
+  "qualificado", "não-qualificado", "prioridade", "proposta-enviada",
+  "aguardando-retorno", "cliente", "vip", "recontato",
+];
+
 function avatarColor(phone: string): string {
   let h = 0;
   for (const c of phone) h = ((h * 31) + c.charCodeAt(0)) >>> 0;
@@ -89,6 +94,7 @@ export function ConversasClient({ initialConversas, leads, initialWhatsapp }: Pr
   const [tagsMap, setTagsMap] = useState<Record<string, string[]>>({});
   const [showTagsPanel, setShowTagsPanel] = useState(false);
   const [tagInput, setTagInput] = useState("");
+  const [filterTags, setFilterTags] = useState<Set<string>>(new Set());
 
   // Message sending
   const [msgText, setMsgText] = useState("");
@@ -116,6 +122,32 @@ export function ConversasClient({ initialConversas, leads, initialWhatsapp }: Pr
   }
 
   const selected = conversas.find((c) => c.id === selectedId) ?? null;
+
+  // Load all tags on mount for filtering
+  useEffect(() => {
+    fetch("/api/contatos")
+      .then((r) => r.json())
+      .then((json) => {
+        const map: Record<string, string[]> = {};
+        for (const c of json.contatos ?? []) map[c.whatsapp] = c.tags ?? [];
+        setTagsMap(map);
+      })
+      .catch(() => {});
+  }, []);
+
+  const tagsDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    Object.values(tagsMap).forEach((tags) => tags.forEach((t) => set.add(t)));
+    return [...set].sort();
+  }, [tagsMap]);
+
+  function toggleFilterTag(tag: string) {
+    setFilterTags((prev) => {
+      const next = new Set(prev);
+      next.has(tag) ? next.delete(tag) : next.add(tag);
+      return next;
+    });
+  }
 
   // Auto-select conversation from URL param (?whatsapp=...)
   useEffect(() => {
@@ -183,13 +215,19 @@ export function ConversasClient({ initialConversas, leads, initialWhatsapp }: Pr
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    if (!q) return conversas;
     return conversas.filter((c) => {
-      const name = contactName(c).toLowerCase();
-      return name.includes(q) || c.whatsapp.includes(q);
+      if (q) {
+        const name = contactName(c).toLowerCase();
+        if (!name.includes(q) && !c.whatsapp.includes(q)) return false;
+      }
+      if (filterTags.size > 0) {
+        const tags = tagsMap[c.whatsapp] ?? [];
+        if (![...filterTags].some((t) => tags.includes(t))) return false;
+      }
+      return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversas, search, leadNames]);
+  }, [conversas, search, leadNames, filterTags, tagsMap]);
 
   function handleSelect(id: string) {
     setSelectedId(id);
@@ -213,30 +251,37 @@ export function ConversasClient({ initialConversas, leads, initialWhatsapp }: Pr
   }
 
   // ── Tags ──
-  async function addTag() {
-    if (!selected || !tagInput.trim()) return;
-    const tag = tagInput.trim().toLowerCase().replace(/\s+/g, "-");
-    const current = tagsMap[selected.whatsapp] ?? [];
-    if (current.includes(tag)) { setTagInput(""); return; }
-    const newTags = [...current, tag];
-    setTagsMap((t) => ({ ...t, [selected.whatsapp]: newTags }));
-    setTagInput("");
-    await fetch(`/api/contatos/${encodeURIComponent(selected.whatsapp)}`, {
+  async function saveTagsForContact(whatsapp: string, newTags: string[]) {
+    setTagsMap((prev) => ({ ...prev, [whatsapp]: newTags }));
+    await fetch(`/api/contatos/${encodeURIComponent(whatsapp)}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tags: newTags }),
     });
   }
 
+  async function addTag() {
+    if (!selected || !tagInput.trim()) return;
+    const tag = tagInput.trim().toLowerCase().replace(/\s+/g, "-");
+    const current = tagsMap[selected.whatsapp] ?? [];
+    if (current.includes(tag)) { setTagInput(""); return; }
+    setTagInput("");
+    await saveTagsForContact(selected.whatsapp, [...current, tag]);
+  }
+
   async function removeTag(tag: string) {
     if (!selected) return;
     const newTags = (tagsMap[selected.whatsapp] ?? []).filter((t) => t !== tag);
-    setTagsMap((t) => ({ ...t, [selected.whatsapp]: newTags }));
-    await fetch(`/api/contatos/${encodeURIComponent(selected.whatsapp)}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tags: newTags }),
-    });
+    await saveTagsForContact(selected.whatsapp, newTags);
+  }
+
+  async function togglePredefinedTag(tag: string) {
+    if (!selected) return;
+    const current = tagsMap[selected.whatsapp] ?? [];
+    const newTags = current.includes(tag)
+      ? current.filter((t) => t !== tag)
+      : [...current, tag];
+    await saveTagsForContact(selected.whatsapp, newTags);
   }
 
   // ── Send helpers ──
@@ -374,6 +419,30 @@ export function ConversasClient({ initialConversas, leads, initialWhatsapp }: Pr
               className="w-full pl-9 pr-3 py-2 text-sm rounded-lg outline-none"
               style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-dim)", color: "var(--text-1)", fontFamily: "var(--ff-body)" }} />
           </div>
+          {/* Tag filters */}
+          {tagsDisponiveis.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {tagsDisponiveis.map((tag) => (
+                <button key={tag} onClick={() => toggleFilterTag(tag)}
+                  className="text-xs px-2 py-0.5 rounded-full transition-colors"
+                  style={{
+                    background: filterTags.has(tag) ? "var(--cyan)" : "rgba(65,190,234,0.08)",
+                    color: filterTags.has(tag) ? "#0a0d14" : "var(--cyan)",
+                    border: `1px solid ${filterTags.has(tag) ? "var(--cyan)" : "rgba(65,190,234,0.15)"}`,
+                    fontWeight: filterTags.has(tag) ? 600 : 400,
+                  }}>
+                  #{tag}
+                </button>
+              ))}
+              {filterTags.size > 0 && (
+                <button onClick={() => setFilterTags(new Set())}
+                  className="text-xs px-2 py-0.5 rounded-full"
+                  style={{ color: "var(--text-3)", border: "1px solid var(--border-dim)" }}>
+                  × limpar
+                </button>
+              )}
+            </div>
+          )}
           <p className="text-xs mt-2" style={{ color: "var(--text-3)" }}>{filtered.length} conversa{filtered.length !== 1 ? "s" : ""}</p>
         </div>
 
@@ -477,28 +546,50 @@ export function ConversasClient({ initialConversas, leads, initialWhatsapp }: Pr
 
             {/* Tags panel */}
             {showTagsPanel && (
-              <div className="px-4 py-3 flex-shrink-0 flex flex-wrap items-center gap-2"
+              <div className="px-4 py-3 flex-shrink-0 space-y-2.5"
                 style={{ borderBottom: "1px solid var(--border-dim)", background: "var(--bg-surface)" }}>
-                <Hash size={14} style={{ color: "var(--text-3)" }} />
-                {selTags.map((tag) => (
-                  <span key={tag} className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
-                    style={{ background: "rgba(65,190,234,0.12)", color: "var(--cyan)", border: "1px solid rgba(65,190,234,0.2)" }}>
-                    #{tag}
-                    <button onClick={() => removeTag(tag)} className="ml-0.5 opacity-60 hover:opacity-100">
-                      <X size={10} />
-                    </button>
-                  </span>
-                ))}
-                <form onSubmit={(e) => { e.preventDefault(); addTag(); }} className="flex items-center gap-1">
-                  <input value={tagInput} onChange={(e) => setTagInput(e.target.value)}
-                    placeholder="+ nova tag"
-                    className="text-xs rounded-full px-2.5 py-1 outline-none w-24"
-                    style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-dim)", color: "var(--text-2)" }} />
-                  <button type="submit" className="text-xs px-2 py-1 rounded-full"
-                    style={{ background: "rgba(65,190,234,0.15)", color: "var(--cyan)" }}>
-                    Ok
-                  </button>
-                </form>
+                {/* Predefined tags */}
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider mb-1.5" style={{ color: "var(--text-3)" }}>Tags rápidas</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {TAGS_PREDEFINIDAS.map((tag) => {
+                      const ativa = selTags.includes(tag);
+                      return (
+                        <button key={tag} onClick={() => togglePredefinedTag(tag)}
+                          className="text-xs px-2.5 py-0.5 rounded-full transition-colors"
+                          style={{
+                            background: ativa ? "var(--cyan)" : "var(--bg-elevated)",
+                            color: ativa ? "#0a0d14" : "var(--text-2)",
+                            border: `1px solid ${ativa ? "var(--cyan)" : "var(--border-dim)"}`,
+                            fontWeight: ativa ? 600 : 400,
+                          }}>
+                          #{tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {/* Custom tags + active */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Hash size={13} style={{ color: "var(--text-3)" }} />
+                  {selTags.filter((t) => !TAGS_PREDEFINIDAS.includes(t)).map((tag) => (
+                    <span key={tag} className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+                      style={{ background: "rgba(65,190,234,0.12)", color: "var(--cyan)", border: "1px solid rgba(65,190,234,0.2)" }}>
+                      #{tag}
+                      <button onClick={() => removeTag(tag)}><X size={10} /></button>
+                    </span>
+                  ))}
+                  <form onSubmit={(e) => { e.preventDefault(); addTag(); }} className="flex items-center gap-1">
+                    <input value={tagInput} onChange={(e) => setTagInput(e.target.value)}
+                      placeholder="+ tag personalizada"
+                      className="text-xs rounded-full px-2.5 py-1 outline-none"
+                      style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-dim)", color: "var(--text-2)", width: 130 }} />
+                    {tagInput && (
+                      <button type="submit" className="text-xs px-2 py-1 rounded-full"
+                        style={{ background: "rgba(65,190,234,0.15)", color: "var(--cyan)" }}>Ok</button>
+                    )}
+                  </form>
+                </div>
               </div>
             )}
 
