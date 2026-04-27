@@ -21,18 +21,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const prompt = `Pesquise sobre a empresa "${nome}"${cidade ? ` localizada em ${cidade}` : ""}${segmento ? `, que atua no segmento de ${segmento}` : ""}.
 ${website ? `Website da empresa: ${website}` : ""}
 
-Com base nas informações encontradas sobre ela, escreva uma mensagem de primeiro contato via WhatsApp da empresa VELLO Inteligência Artificial — consultoria especializada em IA e automação de processos para negócios.
+Com base no que encontrar, escreva uma mensagem de primeiro contato via WhatsApp da VELLO Inteligência Artificial — empresa que cria agentes de IA para automatizar o atendimento de negócios pelo WhatsApp.
+
+O foco da mensagem é SEMPRE vender um agente de IA para atendimento via WhatsApp: um assistente que responde clientes automaticamente 24h, qualifica leads, agenda, tira dúvidas e libera a equipe para fechar vendas.
 
 Regras obrigatórias:
-- Máximo 3 parágrafos curtos (mensagem cabe em tela de celular sem rolar)
-- Demonstre que pesquisou a empresa: mencione o setor, produto ou processo específico deles
-- Apresente um benefício concreto que a Vello pode entregar para ESSE tipo de negócio
-- Tom humano e direto, NÃO pareça mensagem em massa ou template
-- NÃO comece com "Olá, tudo bem?" ou variações genéricas
+- Máximo 3 parágrafos curtos (cabe na tela sem rolar)
+- Conecte a proposta ao negócio deles: mencione algo específico do setor ou da empresa (tipo de cliente, volume de atendimento, processo típico do segmento)
+- Mostre um benefício concreto do agente de IA para ESSE segmento (ex: imobiliária → qualifica interessados 24h; clínica → agenda e confirma consultas; loja → responde dúvidas de produto e preço)
+- Tom humano e direto — NÃO pareça mensagem em massa
+- NÃO comece com "Olá, tudo bem?" nem variações genéricas
 - NÃO use mais de 2 emojis no total
 - Termine com UMA pergunta aberta que convide à resposta
-- Escreva em português brasileiro informal mas profissional
-- NÃO inclua assinatura nem nome da empresa ao final (será adicionado depois)`;
+- Português brasileiro, informal mas profissional
+- NÃO inclua assinatura nem nome da empresa ao final`;
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
