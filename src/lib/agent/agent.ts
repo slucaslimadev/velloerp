@@ -197,7 +197,15 @@ export async function processarMensagem(
 
   const ativa = await isIaAtiva(whatsapp);
   if (!ativa) {
-    console.log(`[Agent] IA desativada ou bloqueada (24h/Lead) para ${whatsapp}. Ignorando.`);
+    // Mesmo com IA inativa, salva a mensagem no histórico para aparecer em Conversas
+    try {
+      const conversa = await getOrCreateConversa(whatsapp, nomeContato);
+      const historico: Mensagem[] = [...conversa.historico, { role: "user", content: texto }];
+      await updateHistorico(conversa.id, historico);
+    } catch (err) {
+      console.error("[Agent] Erro ao salvar mensagem com IA inativa:", err);
+    }
+    console.log(`[Agent] IA desativada para ${whatsapp}. Mensagem salva sem resposta.`);
     return;
   }
 
