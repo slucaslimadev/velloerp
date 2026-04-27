@@ -24,6 +24,28 @@ const TAGS_PREDEFINIDAS = [
   "aguardando-retorno", "cliente", "vip", "recontato",
 ];
 
+function playNotificationSound() {
+  try {
+    const ctx = new AudioContext();
+    const t = ctx.currentTime;
+
+    // Dois tons: D5 → A5 (estilo WhatsApp)
+    [[587, t, t + 0.18], [880, t + 0.14, t + 0.38]].forEach(([freq, start, end]) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.25, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, end);
+      osc.start(start);
+      osc.stop(end);
+    });
+  } catch {
+    // AudioContext bloqueado (sem interação do usuário) — ignora silenciosamente
+  }
+}
+
 function avatarColor(phone: string): string {
   let h = 0;
   for (const c of phone) h = ((h * 31) + c.charCodeAt(0)) >>> 0;
@@ -107,6 +129,7 @@ export function ConversasClient({ initialConversas, leads, initialWhatsapp }: Pr
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const historicoLens = useRef<Record<string, number>>({});
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -170,10 +193,20 @@ export function ConversasClient({ initialConversas, leads, initialWhatsapp }: Pr
     const channel = supabase.channel("conversas-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "conversas" }, (payload) => {
         if (payload.eventType === "INSERT") {
-          setConversas((prev) => [payload.new as Conversa, ...prev]);
+          const nova = payload.new as Conversa;
+          const len = nova.historico?.length ?? 0;
+          historicoLens.current[nova.id] = len;
+          if (len > 0 && nova.historico[len - 1]?.role === "user") playNotificationSound();
+          setConversas((prev) => [nova, ...prev]);
         } else if (payload.eventType === "UPDATE") {
+          const atualizada = payload.new as Conversa;
+          const prevLen = historicoLens.current[atualizada.id] ?? 0;
+          const newLen = atualizada.historico?.length ?? 0;
+          const ultima = atualizada.historico?.[newLen - 1];
+          if (newLen > prevLen && ultima?.role === "user") playNotificationSound();
+          historicoLens.current[atualizada.id] = newLen;
           setConversas((prev) =>
-            prev.map((c) => c.id === payload.new.id ? payload.new as Conversa : c)
+            prev.map((c) => c.id === atualizada.id ? atualizada : c)
               .sort((a, b) => new Date(b.atualizado_em).getTime() - new Date(a.atualizado_em).getTime())
           );
         } else if (payload.eventType === "DELETE") {
