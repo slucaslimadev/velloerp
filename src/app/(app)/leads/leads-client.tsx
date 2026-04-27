@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
+import { useDisparos } from "@/lib/disparos-context";
 import { useRouter } from "next/navigation";
 import {
   MagnifyingGlass, Funnel, X, WhatsappLogo, EnvelopeSimple,
@@ -85,10 +86,8 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
   }
   const [propostas, setPropostas] = useState<PropostaItem[]>([]);
   const [gerandoAll, setGerandoAll] = useState(false);
-  const [enviandoAll, setEnviandoAll] = useState(false);
-  const [envioProgress, setEnvioProgress] = useState<{ atual: number; total: number } | null>(null);
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { iniciarEnvio, state: disparosState } = useDisparos();
+  const enviandoAll = disparosState.ativo;
 
   const hasFilter = !!(filterClassificacao || filterStatus || filterDateFrom || filterDateTo);
 
@@ -192,13 +191,12 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
 
   async function importarEEnviar() {
     if (enviandoAll) return;
-    setEnviandoAll(true);
     const supabase = createClient();
 
     const comMensagem = propostas.filter((p) => p.lead.whatsapp && p.mensagem.trim() && p.status === "pronto");
     const semMensagem = propostas.filter((p) => p.status === "sem-telefone" || !p.mensagem.trim());
 
-    // Import all leads
+    // Importa todos os leads primeiro
     const inseridos: Lead[] = [];
     for (const item of [...comMensagem, ...semMensagem]) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -207,39 +205,14 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
     }
     setLeads((prev) => [...inseridos, ...prev]);
 
-    // Send messages with random delay
-    setEnvioProgress({ atual: 0, total: comMensagem.length });
-    for (let i = 0; i < comMensagem.length; i++) {
-      const item = comMensagem[i];
-      await fetch("/api/conversas/iniciar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ whatsapp: item.lead.whatsapp, mensagem: item.mensagem }),
-      });
-      setEnvioProgress({ atual: i + 1, total: comMensagem.length });
-
-      if (i < comMensagem.length - 1) {
-        const delaySec = Math.floor(Math.random() * (90 - 20 + 1)) + 20;
-        setCountdown(delaySec);
-        countdownRef.current = setInterval(() => {
-          setCountdown((prev) => {
-            if (prev === null || prev <= 1) { clearInterval(countdownRef.current!); return null; }
-            return prev - 1;
-          });
-        }, 1000);
-        await new Promise((r) => setTimeout(r, delaySec * 1000));
-        clearInterval(countdownRef.current!);
-        setCountdown(null);
-      }
-    }
-
-    setEnviandoAll(false);
-    setEnvioProgress(null);
+    // Fecha o modal e delega o envio para o context global (continua em background)
     setShowProspeccao(false);
     setProspTab("prospectar");
     setProspBusca("");
     setProspResultados([]);
     setPropostas([]);
+
+    iniciarEnvio(comMensagem.map((p) => ({ whatsapp: p.lead.whatsapp!, mensagem: p.mensagem })));
   }
 
   function irParaWhatsApp(lead: Lead) {
@@ -894,21 +867,8 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
                   ))}
                 </div>
 
-                {/* Footer com progresso */}
+                {/* Footer */}
                 <div className="px-6 py-4 flex-shrink-0" style={{ borderTop: "1px solid var(--border-dim)" }}>
-                  {enviandoAll && (
-                    <div className="mb-3">
-                      {/* Progress bar */}
-                      <div className="w-full rounded-full h-1.5 mb-2" style={{ background: "var(--bg-surface)" }}>
-                        <div className="h-1.5 rounded-full transition-all" style={{ background: "var(--cyan)", width: `${((envioProgress?.atual ?? 0) / (envioProgress?.total ?? 1)) * 100}%` }} />
-                      </div>
-                      <p className="text-xs text-center" style={{ color: "var(--text-3)" }}>
-                        {countdown !== null
-                          ? `Mensagem ${envioProgress?.atual ?? 0}/${envioProgress?.total ?? 0} enviada — próxima em ${countdown}s`
-                          : `Enviando ${envioProgress?.atual ?? 0} de ${envioProgress?.total ?? 0}...`}
-                      </p>
-                    </div>
-                  )}
                   <div className="flex justify-end gap-3">
                     <button onClick={() => setProspTab("prospectar")} disabled={enviandoAll} className="px-4 py-2 rounded-xl text-sm"
                       style={{ color: "var(--text-2)", background: "var(--bg-surface)", border: "1px solid var(--border-dim)" }}>

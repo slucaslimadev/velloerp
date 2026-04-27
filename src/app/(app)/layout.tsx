@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { VelloLogo } from "@/components/shared/VelloLogo";
+import { DisparosProvider } from "@/lib/disparos-context";
 import { List } from "@phosphor-icons/react";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
+    <DisparosProvider>
     <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg-base)" }}>
       {/* Desktop sidebar */}
       <div className="hidden lg:flex flex-shrink-0">
@@ -57,5 +59,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
     </div>
+    </DisparosProvider>
   );
 }
