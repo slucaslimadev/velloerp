@@ -32,6 +32,7 @@ export async function proxy(request: NextRequest) {
   const isLoginPage = request.nextUrl.pathname === "/login";
   const isPublicPath = request.nextUrl.pathname.startsWith("/_next") ||
     request.nextUrl.pathname.startsWith("/api") ||
+    request.nextUrl.pathname.startsWith("/demo") ||
     request.nextUrl.pathname === "/favicon.ico";
 
   if (!isPublicPath && !user && !isLoginPage) {

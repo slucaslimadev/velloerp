@@ -32,6 +32,7 @@ export async function transcreverAudioBase64(base64: string, ext = ".ogg"): Prom
       getOpenAI().audio.transcriptions.create({
         file: fsSync.createReadStream(filePath),
         model: "whisper-1",
+        language: "pt",
       })
     );
 

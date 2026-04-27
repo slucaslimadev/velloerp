@@ -71,12 +71,12 @@ function buildOpenAIMessages(
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const { slug, messages } = (await req.json()) as { slug: string; messages: ChatMessage[] };
+  const { slug, messages, systemPromptOverride } = (await req.json()) as { slug: string; messages: ChatMessage[]; systemPromptOverride?: string };
 
   const agente = getAgente(slug);
   if (!agente) return NextResponse.json({ error: "Agente não encontrado" }, { status: 404 });
 
-  const openaiMessages = buildOpenAIMessages(agente.systemPrompt, messages);
+  const openaiMessages = buildOpenAIMessages(systemPromptOverride || agente.systemPrompt, messages);
 
   try {
     const completion = await ai().chat.completions.create({
