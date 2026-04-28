@@ -27,6 +27,7 @@ const workSans = Work_Sans({
 export const metadata: Metadata = {
   title: "Vello ERP",
   description: "Painel de gestão de leads e clientes — Vello Inteligência Artificial",
+  icons: { icon: "/logo.png", apple: "/logo.png" },
 };
 
 export default function RootLayout({
