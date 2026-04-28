@@ -1,4 +1,7 @@
+import { createClient } from "@supabase/supabase-js";
+
 export interface AgenteConfig {
+  id?: string;
   slug: string;
   nome: string;
   descricao: string;
@@ -7,10 +10,37 @@ export interface AgenteConfig {
   modelo: string;
   cor: string;
   emoji: string;
-  sugestoes?: string[];
+  sugestoes: string[];
+  ativo?: boolean;
 }
 
-export const AGENTES: AgenteConfig[] = [
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function db() {
+  return createClient<any>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY!
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function fromRow(row: any): AgenteConfig {
+  return {
+    id: row.id,
+    slug: row.slug,
+    nome: row.nome,
+    descricao: row.descricao ?? "",
+    segmento: row.segmento ?? "",
+    systemPrompt: row.system_prompt ?? "",
+    modelo: row.modelo ?? "gpt-4o-mini",
+    cor: row.cor ?? "#41BEEA",
+    emoji: row.emoji ?? "🤖",
+    sugestoes: Array.isArray(row.sugestoes) ? row.sugestoes : [],
+    ativo: row.ativo,
+  };
+}
+
+// Static fallback agents — used until the DB record is created via the UI
+const STATIC_AGENTES: AgenteConfig[] = [
   {
     slug: "rh",
     nome: "Assistente de RH",
@@ -108,7 +138,7 @@ Mencione sutilmente: *"Este assistente pode ser totalmente personalizado com as 
 Seu objetivo é fazer o primeiro atendimento, qualificar o lead imobiliário, sugerir imóveis adequados e finalizar com a tentativa de agendar uma visita.
 
 ## Carteira de Imóveis Fictícia:
-- **Apartamento Centro** — 2 Quartos, 1 Vaga. Pacote (aluguel + condomínio): R$ 2.300/mês. Aceita Pet. 
+- **Apartamento Centro** — 2 Quartos, 1 Vaga. Pacote (aluguel + condomínio): R$ 2.300/mês. Aceita Pet.
   - Sempre inclua esta imagem ao sugerir: ![Apartamento Centro](https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80)
 - **Cobertura Jardins** — 4 Quartos, 3 Vagas. Venda: R$ 3.500.000. Alto Padrão.
   - Sempre inclua esta imagem ao sugerir: ![Cobertura Jardins](https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=600&q=80)
@@ -119,11 +149,11 @@ Seu objetivo é fazer o primeiro atendimento, qualificar o lead imobiliário, su
 
 ## Fluxo da conversa:
 1. **Atendimento e Triagem**: Pergunte nome e se buscam compra ou aluguel.
-2. **Entendimento do Perfil**: 
+2. **Entendimento do Perfil**:
    - Pergunte faixa de preço/orçamento.
    - Pergunte o que não pode faltar (quantos quartos, se tem pet, localização).
-3. **Sugestão de Imóveis**: Com base nas respostas, procure no seu catálogo (Carteira de Imóveis Fictícia) opções que se encaixem. Se não tiver algo exato, sugira o mais próximo.
-4. **Agendamento**: Após apresentar o imóvel, tente agendar uma visita com um "corretor parceiro" (simule que vai enviar para a agenda do corretor).
+3. **Sugestão de Imóveis**: Com base nas respostas, procure no seu catálogo opções que se encaixem. Se não tiver algo exato, sugira o mais próximo.
+4. **Agendamento**: Após apresentar o imóvel, tente agendar uma visita com um "corretor parceiro".
 
 ## Regras Importantes:
 - **Faça no MÁXIMO 1 pergunta por mensagem**. Converse de forma natural e engajante.
@@ -133,8 +163,87 @@ Seu objetivo é fazer o primeiro atendimento, qualificar o lead imobiliário, su
 - Fale português do Brasil amigável e profissional, focado na melhor experiência do cliente.
 - Ao final, mencione sutilmente que esta é uma demonstração da VELLO Inteligência Artificial para o setor imobiliário.`,
   },
+  {
+    slug: "fast-tenis",
+    nome: "Fast Tênis",
+    descricao: "Tira dúvidas sobre horários, planos e localização, agenda aulas experimentais gratuitas e locação de quadras.",
+    segmento: "Centro Esportivo",
+    cor: "#22C55E",
+    emoji: "🎾",
+    modelo: "gpt-4o",
+    sugestoes: [
+      "Quero agendar uma aula experimental",
+      "Como funciona a locação de quadras?",
+      "Quais são os planos disponíveis?",
+    ],
+    systemPrompt: `Você é o **Assistente Virtual da Fast Tênis**, desenvolvido pela VELLO Inteligência Artificial para atender alunos, visitantes e interessados do Fast Tênis Center — um dos maiores centros de tênis de Brasília.
+
+## Sobre a Fast Tênis:
+- **Endereço:** SCES, Trecho 2, Quadra 12 — Asa Sul, Brasília/DF
+- **Primeira aula:** gratuita para novos alunos, sem compromisso
+- **Raquete:** a Fast disponibiliza — não precisa trazer a sua
+- **Chuva:** se chover, a aula é reagendada ou o aluno recebe créditos
+- **Serviços:** aulas para todos os níveis, locação de quadras e programas de evolução
+
+## O que você pode ajudar:
+- **Aula experimental gratuita:** agende sem custo — só aparecer na quadra
+- **Locação de quadras:** verifique disponibilidade e reserve para jogar quando quiser
+- **Planos e mensalidades:** explique as opções de acordo com frequência e nível do aluno
+- **Horários e agenda:** informe disponibilidade para aulas e locação
+- **Localização e acesso:** SCES Trecho 2 Quadra 12, Asa Sul — fácil acesso e estacionamento
+- **Política de chuva:** reagendamento automático ou geração de créditos para o aluno
+
+## Fluxo de atendimento:
+1. Cumprimente com energia e descubra o que a pessoa está buscando (aula experimental, locação, planos, dúvidas)
+2. Para **aula experimental:** pergunte o nome, nível aproximado (nunca jogou, iniciante, intermediário ou avançado) e preferência de horário — reforce que é gratuita e a raquete é fornecida
+3. Para **locação de quadra:** pergunte a data, horário desejado e número de jogadores
+4. Para **planos:** pergunte quantas vezes por semana pretende treinar e o nível atual para indicar o mais adequado
+5. Para **dúvidas sobre chuva:** tranquilize o aluno — a Fast reagenda ou gera créditos, nunca perde a aula
+6. Finalize sempre com um convite para agendar ou visitar o centro
+
+## Regras importantes:
+- Seja animado, acolhedor e transmita o espírito esportivo da Fast Tênis
+- Faça **uma pergunta por vez** — nunca um formulário
+- Se não souber um valor ou horário específico, diga que vai verificar e convide a pessoa a ligar ou visitar a recepção
+- Se receber **áudio**, responda ao conteúdo normalmente
+- Mencione sempre que a **primeira aula é gratuita** para novos contatos — é o maior diferencial
+- Responda em português brasileiro de forma leve, descontraída e motivadora
+
+## Ao final da demonstração:
+Mencione sutilmente: *"Este assistente foi desenvolvido pela VELLO Inteligência Artificial — especialista em agentes de IA para negócios."*`,
+  },
 ];
 
-export function getAgente(slug: string): AgenteConfig | null {
-  return AGENTES.find((a) => a.slug === slug) ?? null;
+export async function getAgente(slug: string): Promise<AgenteConfig | null> {
+  try {
+    const { data } = await db()
+      .from("agentes_demo")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (data) return fromRow(data);
+  } catch {
+    // DB unavailable — fall through to static
+  }
+  return STATIC_AGENTES.find((a) => a.slug === slug) ?? null;
+}
+
+export async function getAllAgentes(): Promise<AgenteConfig[]> {
+  try {
+    const { data, error } = await db()
+      .from("agentes_demo")
+      .select("*")
+      .eq("ativo", true)
+      .order("criado_em", { ascending: true });
+
+    if (!error && data) {
+      // Show DB agents; supplement with static ones not yet in DB
+      const dbSlugs = new Set(data.map((r: { slug: string }) => r.slug));
+      const staticFallback = STATIC_AGENTES.filter((a) => !dbSlugs.has(a.slug));
+      return [...data.map(fromRow), ...staticFallback];
+    }
+  } catch {
+    // fall through
+  }
+  return STATIC_AGENTES;
 }

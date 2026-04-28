@@ -3,9 +3,11 @@ import { getAgente } from "@/lib/agentes/config";
 import { ChatClient } from "@/app/(app)/agentes/[slug]/chat-client";
 import { VelloLogo } from "@/components/shared/VelloLogo";
 
+export const dynamic = "force-dynamic";
+
 export default async function PublicDemoPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const agente = getAgente(slug);
+  const agente = await getAgente(slug);
   if (!agente) notFound();
 
   return (
@@ -30,17 +32,8 @@ export default async function PublicDemoPage({ params }: { params: Promise<{ slu
           borderBottom: "1px solid var(--border-dim)",
         }}
       >
-        {/* VELLO Logo — igual ao sistema */}
-          <VelloLogo iconSize={32} titleSize={18} showSubtitle={true} />
-
-        {/* Tagline */}
-        <span
-          style={{
-            fontSize: 11,
-            color: "var(--text-3)",
-            fontFamily: "var(--ff-body)",
-          }}
-        >
+        <VelloLogo iconSize={32} titleSize={18} showSubtitle={true} />
+        <span style={{ fontSize: 11, color: "var(--text-3)", fontFamily: "var(--ff-body)" }}>
           Experimente a inteligência artificial de verdade
         </span>
       </div>

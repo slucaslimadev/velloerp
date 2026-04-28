@@ -71,16 +71,29 @@ function buildOpenAIMessages(
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const { slug, messages, systemPromptOverride } = (await req.json()) as { slug: string; messages: ChatMessage[]; systemPromptOverride?: string };
+  const { slug, messages, systemPromptOverride, modeloOverride } = (await req.json()) as {
+    slug: string;
+    messages: ChatMessage[];
+    systemPromptOverride?: string;
+    modeloOverride?: string;
+  };
 
-  const agente = getAgente(slug);
-  if (!agente) return NextResponse.json({ error: "Agente não encontrado" }, { status: 404 });
+  // When systemPromptOverride is provided (wizard preview), skip slug validation
+  let systemPrompt = systemPromptOverride ?? "";
+  let modelo = modeloOverride ?? "gpt-4o-mini";
 
-  const openaiMessages = buildOpenAIMessages(systemPromptOverride || agente.systemPrompt, messages);
+  if (!systemPromptOverride) {
+    const agente = await getAgente(slug);
+    if (!agente) return NextResponse.json({ error: "Agente não encontrado" }, { status: 404 });
+    systemPrompt = agente.systemPrompt;
+    modelo = agente.modelo;
+  }
+
+  const openaiMessages = buildOpenAIMessages(systemPrompt, messages);
 
   try {
     const completion = await ai().chat.completions.create({
-      model: agente.modelo,
+      model: modelo,
       messages: openaiMessages,
       max_tokens: 1500,
       temperature: 0.7,
