@@ -57,6 +57,19 @@ export async function getMediaBase64(messageId: string): Promise<string> {
   }
 }
 
+export async function enviarDocumento(numero: string, base64: string, fileName: string, caption: string): Promise<void> {
+  await comRetry(async () => {
+    await api.post(`/message/sendMedia/${INSTANCE}`, {
+      number: numero,
+      mediatype: "document",
+      mimetype: "application/pdf",
+      caption,
+      media: base64,
+      fileName,
+    });
+  });
+}
+
 export async function enviarImagem(numero: string, mediaUrl: string, caption: string): Promise<void> {
   await comRetry(async () => {
     await api.post(`/message/sendMedia/${INSTANCE}`, {

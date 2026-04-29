@@ -8,6 +8,7 @@ import {
   Calendar, User, Buildings, Tag, Star, ChatCircle, Phone,
   VideoCamera, Robot, Plus, SquaresFour, Rows, Trash,
   WarningCircle, ArrowsDownUp, MagnifyingGlassPlus, Check,
+  FilePdf, PaperPlaneTilt, DownloadSimple, SpinnerGap,
 } from "@phosphor-icons/react";
 import type { Lead, LeadClassificacao, LeadStatus, Interacao, Conversa } from "@/types/database";
 import { ClassificacaoBadge } from "@/components/shared/ClassificacaoBadge";
@@ -69,6 +70,12 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
   const [salvando, setSalvando] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deletando, setDeletando] = useState(false);
+
+  // Proposta comercial
+  const [gerandoProposta, setGerandoProposta] = useState(false);
+  const [proposta, setProposta] = useState<{ pdfBase64: string; fileName: string } | null>(null);
+  const [enviandoProposta, setEnviandoProposta] = useState(false);
+  const [propostaEnviada, setPropostaEnviada] = useState(false);
 
   // Prospecção via Apify
   const [showProspeccao, setShowProspeccao] = useState(false);
@@ -213,6 +220,46 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
     setPropostas([]);
 
     iniciarEnvio(comMensagem.map((p) => ({ whatsapp: p.lead.whatsapp!, mensagem: p.mensagem })));
+  }
+
+  async function gerarPropostaLead(lead: Lead) {
+    setGerandoProposta(true);
+    setProposta(null);
+    setPropostaEnviada(false);
+    try {
+      const res = await fetch("/api/leads/proposta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(lead),
+      });
+      const json = await res.json();
+      if (json.pdfBase64) setProposta({ pdfBase64: json.pdfBase64, fileName: json.fileName });
+    } finally {
+      setGerandoProposta(false);
+    }
+  }
+
+  async function enviarPropostaWhatsApp(lead: Lead) {
+    if (!proposta || !lead.whatsapp) return;
+    setEnviandoProposta(true);
+    try {
+      await fetch("/api/leads/proposta/enviar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ whatsapp: lead.whatsapp, ...proposta, nomeCliente: lead.nome }),
+      });
+      setPropostaEnviada(true);
+    } finally {
+      setEnviandoProposta(false);
+    }
+  }
+
+  function downloadProposta() {
+    if (!proposta) return;
+    const link = document.createElement("a");
+    link.href = `data:application/pdf;base64,${proposta.pdfBase64}`;
+    link.download = proposta.fileName;
+    link.click();
   }
 
   function irParaWhatsApp(lead: Lead) {
@@ -509,17 +556,30 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
               <StatusBadge status={selectedLead.status} />
             </div>
 
-            {/* WhatsApp button */}
-            {selectedLead.whatsapp && (
+            {/* Action buttons */}
+            <div className="flex flex-col gap-2">
+              {selectedLead.whatsapp && (
+                <button
+                  onClick={() => irParaWhatsApp(selectedLead)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                  style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.20)", color: "#22C55E" }}
+                >
+                  <WhatsappLogo size={17} weight="fill" />
+                  Ir para o WhatsApp
+                </button>
+              )}
               <button
-                onClick={() => irParaWhatsApp(selectedLead)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors"
-                style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.20)", color: "#22C55E" }}
+                onClick={() => gerarPropostaLead(selectedLead)}
+                disabled={gerandoProposta}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60"
+                style={{ background: "rgba(65,190,234,0.10)", border: "1px solid rgba(65,190,234,0.25)", color: "var(--cyan)" }}
               >
-                <WhatsappLogo size={17} weight="fill" />
-                Ir para o WhatsApp
+                {gerandoProposta
+                  ? <><SpinnerGap size={17} className="animate-spin" />Gerando proposta...</>
+                  : <><FilePdf size={17} weight="fill" />Gerar Proposta PDF</>
+                }
               </button>
-            )}
+            </div>
 
             <div className="flex items-center gap-3 flex-wrap">
               <button onClick={() => toggleIaAtiva(selectedLead.id, selectedLead.ia_ativa)}
@@ -631,6 +691,78 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
               >
                 <Trash size={15} /> Excluir Lead
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de proposta PDF */}
+      {proposta && selectedLead && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}>
+          <div className="w-full flex flex-col rounded-2xl overflow-hidden" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-dim)", maxWidth: 780, maxHeight: "92vh" }}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: "1px solid var(--border-dim)" }}>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(65,190,234,0.12)" }}>
+                  <FilePdf size={20} weight="fill" style={{ color: "var(--cyan)" }} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: "var(--text-1)" }}>Proposta Comercial</p>
+                  <p className="text-xs" style={{ color: "var(--text-3)" }}>{selectedLead.nome} · {selectedLead.segmento}</p>
+                </div>
+              </div>
+              <button onClick={() => { setProposta(null); setPropostaEnviada(false); }} style={{ color: "var(--text-3)" }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* PDF Preview */}
+            <div className="flex-1 overflow-hidden" style={{ minHeight: 0 }}>
+              <iframe
+                src={`data:application/pdf;base64,${proposta.pdfBase64}`}
+                className="w-full h-full"
+                style={{ minHeight: 480, border: "none" }}
+                title="Preview da Proposta"
+              />
+            </div>
+
+            {/* Footer actions */}
+            <div className="flex items-center justify-between gap-3 px-6 py-4 flex-shrink-0" style={{ borderTop: "1px solid var(--border-dim)" }}>
+              <button
+                onClick={() => gerarPropostaLead(selectedLead)}
+                disabled={gerandoProposta}
+                className="text-xs px-3 py-2 rounded-lg disabled:opacity-50"
+                style={{ color: "var(--text-3)", background: "var(--bg-surface)", border: "1px solid var(--border-dim)" }}
+              >
+                {gerandoProposta ? "Gerando..." : "↺ Gerar novamente"}
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={downloadProposta}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium"
+                  style={{ background: "var(--bg-surface)", border: "1px solid var(--border-dim)", color: "var(--text-2)" }}
+                >
+                  <DownloadSimple size={16} weight="bold" />
+                  Baixar PDF
+                </button>
+
+                {selectedLead.whatsapp && (
+                  <button
+                    onClick={() => enviarPropostaWhatsApp(selectedLead)}
+                    disabled={enviandoProposta || propostaEnviada}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-60"
+                    style={{ background: propostaEnviada ? "rgba(34,197,94,0.15)" : "var(--cyan)", color: propostaEnviada ? "#22C55E" : "#0a0d14", border: propostaEnviada ? "1px solid rgba(34,197,94,0.3)" : "none" }}
+                  >
+                    {enviandoProposta
+                      ? <><SpinnerGap size={15} className="animate-spin" />Enviando...</>
+                      : propostaEnviada
+                        ? <><Check size={15} weight="bold" />Enviado!</>
+                        : <><PaperPlaneTilt size={15} weight="fill" />Enviar por WhatsApp</>
+                    }
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
