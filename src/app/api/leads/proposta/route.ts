@@ -13,69 +13,105 @@ function ai() {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const lead = await req.json();
+  const dados = await req.json();
 
   const {
-    nome, segmento, dor_principal, tamanho_empresa,
-    orcamento, prazo, sistemas_utilizados, descricao_processo_ia, observacoes,
-  } = lead;
+    nome, segmento, tamanho_empresa, dor_principal,
+    orcamento, prazo, sistemas_utilizados, observacoes,
+    // Contexto da conversa (campos do formulário)
+    discussao, objecoes, funcionalidades_interessadas, decisor, urgencia,
+  } = dados;
 
   if (!nome) return NextResponse.json({ error: "nome é obrigatório" }, { status: 400 });
 
-  // ─── Geração do conteúdo com GPT-4o ──────────────────────────────────────
+  const urgenciaTexto: Record<string, string> = {
+    "imediato": "quer começar imediatamente",
+    "3-meses": "curto prazo, até 3 meses",
+    "6-meses": "médio prazo, até 6 meses",
+    "indefinido": "ainda explorando opções",
+  };
 
-  const prompt = `Você é um especialista em vendas B2B de tecnologia e deve criar o conteúdo de uma proposta comercial profissional para um potencial cliente da VELLO Inteligência Artificial.
-
-## Sobre a VELLO
-A VELLO é uma empresa de consultoria em IA sediada em Brasília que cria agentes de IA personalizados, automatiza processos e integra sistemas. Diferencial: soluções sob medida que economizam tempo e aumentam a conversão.
+  const prompt = `Você é um especialista em propostas comerciais B2B de tecnologia/IA que aplica princípios de psicologia de vendas para aumentar a taxa de conversão.
 
 ## Dados do Lead
-- **Nome/Empresa:** ${nome}
+- **Empresa:** ${nome}
 - **Segmento:** ${segmento || "não informado"}
 - **Porte:** ${tamanho_empresa || "não informado"}
-- **Principal Dor:** ${dor_principal || "não informada"}
-- **Sistemas Utilizados:** ${sistemas_utilizados || "não informado"}
-- **Processo a Automatizar:** ${descricao_processo_ia || "não informado"}
+- **Dor principal:** ${dor_principal || "não informada"}
 - **Orçamento:** ${orcamento || "a definir"}
-- **Prazo Desejado:** ${prazo || "a definir"}
-- **Observações:** ${observacoes || "nenhuma"}
+- **Prazo:** ${prazo || "a definir"}
+- **Sistemas que usa:** ${sistemas_utilizados || "não informado"}
+${observacoes ? `- **Observações:** ${observacoes}` : ""}
 
-## Tarefa
-Gere o conteúdo da proposta comercial em JSON com esta estrutura exata. Seja específico, persuasivo e personalizado para o segmento do cliente. Mencione a dor real dele e como a VELLO resolve:
+## Contexto da Conversa
+${discussao ? `- **O que foi discutido:** ${discussao}` : ""}
+${objecoes ? `- **Objeções levantadas:** ${objecoes}` : ""}
+${funcionalidades_interessadas ? `- **O que mais interessou:** ${funcionalidades_interessadas}` : ""}
+${decisor ? `- **Decisor:** ${decisor}` : ""}
+${urgencia ? `- **Urgência:** ${urgenciaTexto[urgencia] || urgencia}` : ""}
+
+## Sobre a VELLO
+Consultoria de IA em Brasília que cria agentes de IA personalizados, automatiza processos e integra sistemas. Oferece 7 dias de teste gratuito. Diferencial: soluções sob medida, resultado garantido.
+
+## Princípios a Aplicar
+
+### 1. Loss Aversion (Custo da Inação)
+Calcule e mostre o custo mensal de NÃO ter a solução. Base: volume de atendimentos perdidos, horas gastas manualmente, leads não convertidos. Use dados do segmento para estimar.
+
+### 2. Anchoring (Comparativo de Custo)
+Compare o investimento com o custo de contratar uma pessoa para fazer o mesmo trabalho (salário + encargos ~R$5.000-8.000/mês) ou com o custo atual sem automação.
+
+### 3. Risk Reversal (Garantia)
+Mencione o teste gratuito de 7 dias e a entrega com prazo garantido como eliminadores de risco.
+
+### 4. "Por que agora?" (Urgência)
+Crie urgência baseada em tendências reais do mercado para o segmento: concorrentes adotando IA, custo crescente de mão-de-obra, expectativa dos clientes por atendimento imediato.
+
+### 5. Personalização Total
+Use o contexto da conversa (discussao, objecoes, funcionalidades_interessadas) para personalizar cada seção. Responda objeções diretamente no texto. Mencione o que mais interessou na solução.
+
+## Gere o JSON da proposta com esta estrutura exata:
 
 \`\`\`json
 {
-  "resumo_executivo": "2-3 frases que resumem o diagnóstico e a oportunidade para este cliente específico",
+  "resumo_executivo": "2-3 frases poderosas que resumem a oportunidade e o custo de não agir. Mencione algo específico da conversa se houver.",
+  "custo_inacao": {
+    "valor_mensal": "R$ X.XXX/mês (valor estimado que perde hoje)",
+    "descricao": "2-3 frases explicando o custo real de não automatizar agora — use dados do segmento e da dor relatada. Seja específico."
+  },
+  "por_que_agora": "2-3 frases sobre por que implementar IA neste segmento agora é crítico — tendências de mercado, concorrência, expectativas dos clientes. Seja específico para o segmento.",
   "diagnostico": {
-    "titulo": "Título impactante que nomeia o problema principal do cliente (max 8 palavras)",
-    "descricao": "2-3 parágrafos descrevendo o cenário atual do cliente, os impactos negativos da situação atual e por que é urgente resolver. Seja específico para o segmento."
+    "titulo": "Título impactante que nomeia o problema (max 8 palavras)",
+    "descricao": "2-3 parágrafos. Use o contexto da conversa. Mostre que entende profundamente o problema deles."
   },
   "solucao": {
-    "titulo": "Título da solução proposta (ex: Agente de IA para Atendimento Automatizado) (max 8 palavras)",
-    "descricao": "2 parágrafos explicando o que a VELLO vai entregar e como funciona tecnicamente de forma acessível",
-    "entregaveis": [
-      "Entregável 1 específico",
-      "Entregável 2 específico",
-      "Entregável 3 específico",
-      "Entregável 4 específico"
-    ]
+    "titulo": "Título da solução (max 8 palavras)",
+    "descricao": "2 parágrafos explicando a solução. Se houver funcionalidades que interessaram, destaque-as.",
+    "entregaveis": ["Entregável específico 1", "Entregável 2", "Entregável 3", "Entregável 4"]
+  },
+  "roi": {
+    "economia_mensal": "R$ X.XXX/mês estimado",
+    "payback": "X a Y meses",
+    "descricao": "Como calculamos o retorno baseado no cenário deles."
   },
   "beneficios": [
-    "Benefício 1 com número/métrica estimada (ex: Redução de 70% no tempo de atendimento)",
-    "Benefício 2 com número/métrica",
-    "Benefício 3 com número/métrica",
-    "Benefício 4 com número/métrica"
+    "Benefício 1 com métrica (ex: 70% menos tempo de atendimento)",
+    "Benefício 2 com métrica",
+    "Benefício 3 com métrica",
+    "Benefício 4 com métrica"
   ],
+  "comparativo": "Uma frase poderosa comparando o investimento na VELLO vs. o custo alternativo (contratar funcionário, manter processo manual, perder leads).",
   "investimento": {
     "valor": "${orcamento || "A consultar"}",
-    "descricao": "2-3 frases sobre o que está incluído, formas de pagamento sugeridas e garantias"
+    "descricao": "O que está incluído, formas de pagamento. Se havia objeção de preço na conversa, aborde-a aqui de forma sutil."
   },
+  "garantia": "Descreva o teste gratuito de 7 dias e a garantia de entrega no prazo como eliminadores de risco. Tom confiante.",
   "prazo": "${prazo || "4 a 6 semanas"}",
   "proximos_passos": [
-    "Passo 1 (ex: Reunião de alinhamento para detalhar o escopo)",
-    "Passo 2 (ex: Proposta técnica detalhada em até 48h)",
-    "Passo 3 (ex: Início do desenvolvimento após aprovação)",
-    "Passo 4 (ex: Entrega e treinamento da equipe)"
+    "Passo 1 — Reunião de alinhamento técnico",
+    "Passo 2 — Proposta técnica detalhada em 48h",
+    "Passo 3 — Início do teste gratuito de 7 dias",
+    "Passo 4 — Implementação e treinamento da equipe"
   ]
 }
 \`\`\`
@@ -89,7 +125,7 @@ Retorne APENAS o JSON válido, sem explicações.`;
       model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
-      max_tokens: 1500,
+      max_tokens: 2000,
       response_format: { type: "json_object" },
     });
 
@@ -98,8 +134,6 @@ Retorne APENAS o JSON válido, sem explicações.`;
     console.error("[proposta] Erro ao gerar conteúdo:", err);
     return NextResponse.json({ error: "Falha ao gerar conteúdo da proposta" }, { status: 500 });
   }
-
-  // ─── Geração do PDF ───────────────────────────────────────────────────────
 
   const dadosProposta: PropostaConteudo = {
     nomeCliente: nome,
@@ -112,10 +146,8 @@ Retorne APENAS o JSON válido, sem explicações.`;
     const buffer = await renderToBuffer(
       createElement(PropostaPDF, { c: dadosProposta })
     );
-
     const base64 = Buffer.from(buffer).toString("base64");
     const fileName = `Proposta-VELLO-${nome.replace(/[^a-zA-Z0-9]/g, "-")}.pdf`;
-
     return NextResponse.json({ pdfBase64: base64, fileName });
   } catch (err) {
     console.error("[proposta] Erro ao gerar PDF:", err);

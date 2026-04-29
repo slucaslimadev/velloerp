@@ -38,6 +38,24 @@ const inputStyle = {
 
 type ViewMode = "list" | "cards";
 
+interface PropostaFormData {
+  // Dados do lead (pré-preenchidos, editáveis)
+  nome: string;
+  segmento: string;
+  tamanho_empresa: string;
+  dor_principal: string;
+  orcamento: string;
+  prazo: string;
+  sistemas_utilizados: string;
+  observacoes: string;
+  // Contexto da conversa (novos campos)
+  discussao: string;
+  objecoes: string;
+  funcionalidades_interessadas: string;
+  decisor: string;
+  urgencia: string;
+}
+
 interface FormState {
   nome: string; whatsapp: string; email: string; segmento: string;
   tamanho_empresa: string; dor_principal: string; classificacao: LeadClassificacao;
@@ -76,7 +94,9 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [briefing, setBriefing] = useState<any | null>(null);
 
-  // Proposta comercial
+  // Proposta comercial — formulário pré-geração
+  const [showPropostaForm, setShowPropostaForm] = useState(false);
+  const [propostaForm, setPropostaForm] = useState<PropostaFormData | null>(null);
   const [gerandoProposta, setGerandoProposta] = useState(false);
   const [proposta, setProposta] = useState<{ pdfBase64: string; fileName: string } | null>(null);
   const [enviandoProposta, setEnviandoProposta] = useState(false);
@@ -243,7 +263,27 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
     }
   }
 
-  async function gerarPropostaLead(lead: Lead) {
+  function abrirFormProposta(lead: Lead) {
+    setPropostaForm({
+      nome: lead.nome ?? "",
+      segmento: lead.segmento ?? "",
+      tamanho_empresa: lead.tamanho_empresa ?? "",
+      dor_principal: lead.dor_principal ?? "",
+      orcamento: lead.orcamento ?? "",
+      prazo: lead.prazo ?? "",
+      sistemas_utilizados: lead.sistemas_utilizados ?? "",
+      observacoes: lead.observacoes ?? "",
+      discussao: "",
+      objecoes: "",
+      funcionalidades_interessadas: "",
+      decisor: "",
+      urgencia: "indefinido",
+    });
+    setShowPropostaForm(true);
+  }
+
+  async function gerarPropostaLead(dados: PropostaFormData) {
+    setShowPropostaForm(false);
     setGerandoProposta(true);
     setProposta(null);
     setPropostaEnviada(false);
@@ -251,7 +291,7 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
       const res = await fetch("/api/leads/proposta", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(lead),
+        body: JSON.stringify(dados),
       });
       const json = await res.json();
       if (json.pdfBase64) setProposta({ pdfBase64: json.pdfBase64, fileName: json.fileName });
@@ -592,7 +632,7 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
                 </button>
               )}
               <button
-                onClick={() => gerarPropostaLead(selectedLead)}
+                onClick={() => abrirFormProposta(selectedLead)}
                 disabled={gerandoProposta}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
                 style={{ background: "rgba(65,190,234,0.10)", border: "1px solid rgba(65,190,234,0.25)", color: "var(--cyan)", cursor: "pointer" }}
@@ -833,6 +873,141 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
         </div>
       )}
 
+      {/* Modal: Formulário pré-proposta */}
+      {showPropostaForm && propostaForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
+          onClick={(e) => e.target === e.currentTarget && setShowPropostaForm(false)}>
+          <div className="w-full max-w-xl flex flex-col rounded-2xl overflow-hidden" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-dim)", maxHeight: "92vh" }}>
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: "1px solid var(--border-dim)" }}>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(65,190,234,0.12)" }}>
+                  <FilePdf size={18} weight="fill" style={{ color: "var(--cyan)" }} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: "var(--text-1)" }}>Gerar Proposta</p>
+                  <p className="text-xs" style={{ color: "var(--text-3)" }}>Revise os dados e adicione contexto da conversa</p>
+                </div>
+              </div>
+              <button onClick={() => setShowPropostaForm(false)} style={{ color: "var(--text-3)", cursor: "pointer" }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+              {/* Bloco 1 — Dados do lead */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--cyan)" }}>
+                  Dados do Lead
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: "Nome / Empresa", key: "nome" as const },
+                    { label: "Segmento", key: "segmento" as const },
+                    { label: "Tamanho", key: "tamanho_empresa" as const },
+                    { label: "Orçamento", key: "orcamento" as const },
+                    { label: "Prazo desejado", key: "prazo" as const },
+                    { label: "Sistemas utilizados", key: "sistemas_utilizados" as const },
+                  ].map(({ label, key }) => (
+                    <div key={key}>
+                      <label className="block text-xs mb-1" style={{ color: "var(--text-3)" }}>{label}</label>
+                      <input
+                        className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+                        style={{ background: "var(--bg-surface)", border: "1px solid var(--border-dim)", color: "var(--text-1)" }}
+                        value={propostaForm[key]}
+                        onChange={(e) => setPropostaForm({ ...propostaForm, [key]: e.target.value })}
+                      />
+                    </div>
+                  ))}
+                  <div className="col-span-2">
+                    <label className="block text-xs mb-1" style={{ color: "var(--text-3)" }}>Dor principal</label>
+                    <textarea rows={2} className="w-full rounded-xl px-3 py-2 text-sm outline-none resize-none"
+                      style={{ background: "var(--bg-surface)", border: "1px solid var(--border-dim)", color: "var(--text-1)" }}
+                      value={propostaForm.dor_principal}
+                      onChange={(e) => setPropostaForm({ ...propostaForm, dor_principal: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bloco 2 — Contexto da conversa */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "#a78bfa" }}>
+                  Contexto da Conversa
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs mb-1" style={{ color: "var(--text-3)" }}>O que foi discutido?</label>
+                    <textarea rows={3} className="w-full rounded-xl px-3 py-2 text-sm outline-none resize-none"
+                      style={{ background: "var(--bg-surface)", border: "1px solid var(--border-dim)", color: "var(--text-1)" }}
+                      placeholder="Principais tópicos, necessidades levantadas, cenário atual..."
+                      value={propostaForm.discussao}
+                      onChange={(e) => setPropostaForm({ ...propostaForm, discussao: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="block text-xs mb-1" style={{ color: "var(--text-3)" }}>Objeções levantadas</label>
+                    <textarea rows={2} className="w-full rounded-xl px-3 py-2 text-sm outline-none resize-none"
+                      style={{ background: "var(--bg-surface)", border: "1px solid var(--border-dim)", color: "var(--text-1)" }}
+                      placeholder="Preço, prazo, dúvidas técnicas, experiências anteriores..."
+                      value={propostaForm.objecoes}
+                      onChange={(e) => setPropostaForm({ ...propostaForm, objecoes: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="block text-xs mb-1" style={{ color: "var(--text-3)" }}>O que mais interessou</label>
+                    <textarea rows={2} className="w-full rounded-xl px-3 py-2 text-sm outline-none resize-none"
+                      style={{ background: "var(--bg-surface)", border: "1px solid var(--border-dim)", color: "var(--text-1)" }}
+                      placeholder="Funcionalidades, casos de uso, demos que animaram..."
+                      value={propostaForm.funcionalidades_interessadas}
+                      onChange={(e) => setPropostaForm({ ...propostaForm, funcionalidades_interessadas: e.target.value })} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs mb-1" style={{ color: "var(--text-3)" }}>Decisor</label>
+                      <input className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+                        style={{ background: "var(--bg-surface)", border: "1px solid var(--border-dim)", color: "var(--text-1)" }}
+                        placeholder="Nome / cargo de quem decide"
+                        value={propostaForm.decisor}
+                        onChange={(e) => setPropostaForm({ ...propostaForm, decisor: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="block text-xs mb-1" style={{ color: "var(--text-3)" }}>Urgência percebida</label>
+                      <select className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+                        style={{ background: "var(--bg-surface)", border: "1px solid var(--border-dim)", color: "var(--text-1)", cursor: "pointer" }}
+                        value={propostaForm.urgencia}
+                        onChange={(e) => setPropostaForm({ ...propostaForm, urgencia: e.target.value })}>
+                        <option value="imediato">Imediato — quer começar já</option>
+                        <option value="3-meses">Curto prazo — até 3 meses</option>
+                        <option value="6-meses">Médio prazo — até 6 meses</option>
+                        <option value="indefinido">Indefinido / explorando</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderTop: "1px solid var(--border-dim)" }}>
+              <button onClick={() => setShowPropostaForm(false)}
+                className="px-4 py-2 rounded-xl text-sm transition-opacity hover:opacity-70"
+                style={{ color: "var(--text-2)", background: "var(--bg-surface)", border: "1px solid var(--border-dim)", cursor: "pointer" }}>
+                Cancelar
+              </button>
+              <button
+                onClick={() => gerarPropostaLead(propostaForm)}
+                disabled={!propostaForm.nome.trim()}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 transition-opacity hover:opacity-80"
+                style={{ background: "var(--cyan)", color: "#0a0d14", cursor: "pointer" }}>
+                <FilePdf size={15} weight="fill" />
+                Gerar Proposta
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de proposta PDF */}
       {proposta && selectedLead && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}>
@@ -866,10 +1041,10 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
             {/* Footer actions */}
             <div className="flex items-center justify-between gap-3 px-6 py-4 flex-shrink-0" style={{ borderTop: "1px solid var(--border-dim)" }}>
               <button
-                onClick={() => gerarPropostaLead(selectedLead)}
+                onClick={() => selectedLead && abrirFormProposta(selectedLead)}
                 disabled={gerandoProposta}
                 className="text-xs px-3 py-2 rounded-lg disabled:opacity-50"
-                style={{ color: "var(--text-3)", background: "var(--bg-surface)", border: "1px solid var(--border-dim)" }}
+                style={{ color: "var(--text-3)", background: "var(--bg-surface)", border: "1px solid var(--border-dim)", cursor: "pointer" }}
               >
                 {gerandoProposta ? "Gerando..." : "↺ Gerar novamente"}
               </button>
