@@ -350,9 +350,9 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
   };
 
   return (
-    <div className="h-full flex">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Main panel */}
-      <div className="flex-1 flex flex-col overflow-hidden" style={{ minWidth: 0 }}>
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="px-6 lg:px-8 pt-6 pb-0 flex items-start justify-between gap-4">
           <div>
@@ -527,23 +527,25 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
         </div>
       </div>
 
-      {/* Side panel */}
+      {/* Modal de detalhes do lead */}
       {selectedLead && (
-        <div className="w-full max-w-sm xl:max-w-md flex-shrink-0 flex flex-col overflow-hidden"
-          style={{ borderLeft: "1px solid var(--border-dim)", background: "var(--bg-surface)" }}>
-          <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid var(--border-dim)" }}>
-            <div>
-              <h3 className="font-semibold text-white text-base leading-tight" style={{ fontFamily: "var(--ff-head)" }}>
-                {selectedLead.nome ?? "Sem nome"}
-              </h3>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>Detalhes do lead</p>
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
+          onClick={(e) => e.target === e.currentTarget && setSelectedLead(null)}
+        >
+          <div className="w-full max-w-xl flex flex-col rounded-2xl overflow-hidden" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-dim)", maxHeight: "90vh" }}>
+            <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: "1px solid var(--border-dim)" }}>
+              <div>
+                <h3 className="font-semibold text-white text-base leading-tight" style={{ fontFamily: "var(--ff-head)" }}>
+                  {selectedLead.nome ?? "Sem nome"}
+                </h3>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>Detalhes do lead</p>
+              </div>
+              <button onClick={() => setSelectedLead(null)} className="p-2 rounded-xl transition-colors" style={{ color: "var(--text-3)", cursor: "pointer" }}>
+                <X size={18} />
+              </button>
             </div>
-            <button onClick={() => setSelectedLead(null)} className="p-2 rounded-xl transition-colors" style={{ color: "var(--text-3)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-              <X size={18} />
-            </button>
-          </div>
 
           <div className="flex-1 overflow-y-auto scrollbar-vello p-6 space-y-6">
             <div className="flex items-center gap-3 flex-wrap">
@@ -692,6 +694,7 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
                 <Trash size={15} /> Excluir Lead
               </button>
             </div>
+          </div>
           </div>
         </div>
       )}
