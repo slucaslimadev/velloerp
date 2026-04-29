@@ -9,7 +9,7 @@ import {
   getContextoLead,
 } from "./supabase";
 import { enviarMensagem, enviarDigitando, enviarAlerta } from "./evolution";
-import { DEMO_WA_AGENTES, processarMensagemDemoWa } from "./demo-wa-agentes";
+import { DEMO_WA_AGENTES, processarMensagemDemoWa, normWA } from "./demo-wa-agentes";
 import type { DadosLead, Mensagem } from "./types";
 
 let _openai: OpenAI | null = null;
@@ -197,9 +197,8 @@ export async function processarMensagem(
   console.log(`[Agent] Iniciando processamento para ${whatsapp}`);
 
   // Verifica se o número pertence a um agente demo WhatsApp — bypassa o fluxo Velly
-  const numeroNormalizado = whatsapp.replace(/\D/g, "");
   const demoAgente = DEMO_WA_AGENTES.find((a) =>
-    a.numeros.some((n) => n.replace(/\D/g, "") === numeroNormalizado)
+    a.numeros.some((n) => normWA(n) === normWA(whatsapp))
   );
   if (demoAgente) {
     return processarMensagemDemoWa(whatsapp, texto, nomeContato, demoAgente);

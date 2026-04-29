@@ -10,6 +10,19 @@ function getOpenAI() {
   return _openai;
 }
 
+// ─── Normalização de número WA ────────────────────────────────────────────────
+
+// Remove o nono dígito do celular BR para comparação uniforme.
+// Evolution API pode entregar 13 ou 12 dígitos dependendo da versão.
+export function normWA(n: string): string {
+  const d = n.replace(/\D/g, "");
+  // Celular BR com nono dígito: 55 + DDD(2) + 9 + 8 dígitos = 13 → vira 12
+  if (d.length === 13 && d.startsWith("55") && d[4] === "9") {
+    return d.slice(0, 4) + d.slice(5);
+  }
+  return d;
+}
+
 // ─── Catálogo de veículos ─────────────────────────────────────────────────────
 
 const VEICULOS: Record<string, { imageUrl: string; caption: string }> = {
@@ -43,7 +56,7 @@ export interface DemoWaAgente {
 
 export const DEMO_WA_AGENTES: DemoWaAgente[] = [
   {
-    numeros: ["5561999872122"],
+    numeros: ["556199872122"],
     modelo: "gpt-4o",
     systemPrompt: `Você é o **Consultor Virtual da AutoPrime**, uma concessionária multimarcas em Brasília, desenvolvido pela VELLO Inteligência Artificial.
 

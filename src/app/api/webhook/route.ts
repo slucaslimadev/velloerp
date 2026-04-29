@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import { type NextRequest, NextResponse } from "next/server";
 import { processarMensagem, MSG_MIDIA } from "@/lib/agent/agent";
-import { DEMO_WA_AGENTES } from "@/lib/agent/demo-wa-agentes";
+import { DEMO_WA_AGENTES, normWA } from "@/lib/agent/demo-wa-agentes";
 import { enviarMensagem, getMediaBase64 } from "@/lib/agent/evolution";
 import { transcreverAudioBase64 } from "@/lib/agent/audio";
 import type { EvolutionWebhookPayload } from "@/lib/agent/types";
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const whatsapp = key.remoteJid.replace("@s.whatsapp.net", "").replace("@g.us", "");
 
   const isDemoNumero = DEMO_WA_AGENTES.some((a) =>
-    a.numeros.some((n) => n.replace(/\D/g, "") === whatsapp.replace(/\D/g, ""))
+    a.numeros.some((n) => normWA(n) === normWA(whatsapp))
   );
 
   const allowedNumber = process.env.ALLOWED_WHATSAPP?.trim();
