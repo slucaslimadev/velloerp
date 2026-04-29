@@ -57,6 +57,19 @@ export async function getMediaBase64(messageId: string): Promise<string> {
   }
 }
 
+export async function enviarImagem(numero: string, mediaUrl: string, caption: string): Promise<void> {
+  await comRetry(async () => {
+    await api.post(`/message/sendMedia/${INSTANCE}`, {
+      number: numero,
+      mediatype: "image",
+      mimetype: "image/jpeg",
+      caption,
+      media: mediaUrl,
+      fileName: "veiculo.jpg",
+    });
+  });
+}
+
 export async function enviarAlerta(mensagem: string): Promise<void> {
   const numero = process.env.ALERT_WHATSAPP_NUMBER;
   if (!numero) return;
