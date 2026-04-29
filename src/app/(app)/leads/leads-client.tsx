@@ -8,7 +8,7 @@ import {
   Calendar, User, Buildings, Tag, Star, ChatCircle, Phone,
   VideoCamera, Robot, Plus, SquaresFour, Rows, Trash,
   WarningCircle, ArrowsDownUp, MagnifyingGlassPlus, Check,
-  FilePdf, PaperPlaneTilt, DownloadSimple, SpinnerGap,
+  FilePdf, PaperPlaneTilt, DownloadSimple, SpinnerGap, Binoculars,
 } from "@phosphor-icons/react";
 import type { Lead, LeadClassificacao, LeadStatus, Interacao, Conversa } from "@/types/database";
 import { ClassificacaoBadge } from "@/components/shared/ClassificacaoBadge";
@@ -70,6 +70,11 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
   const [salvando, setSalvando] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deletando, setDeletando] = useState(false);
+
+  // Briefing de inteligência
+  const [gerandoBriefing, setGerandoBriefing] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [briefing, setBriefing] = useState<any | null>(null);
 
   // Proposta comercial
   const [gerandoProposta, setGerandoProposta] = useState(false);
@@ -220,6 +225,22 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
     setPropostas([]);
 
     iniciarEnvio(comMensagem.map((p) => ({ whatsapp: p.lead.whatsapp!, mensagem: p.mensagem })));
+  }
+
+  async function gerarBriefingLead(lead: Lead) {
+    setGerandoBriefing(true);
+    setBriefing(null);
+    try {
+      const res = await fetch("/api/leads/briefing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(lead),
+      });
+      const json = await res.json();
+      if (json.briefing) setBriefing(json.briefing);
+    } finally {
+      setGerandoBriefing(false);
+    }
   }
 
   async function gerarPropostaLead(lead: Lead) {
@@ -578,7 +599,18 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
               >
                 {gerandoProposta
                   ? <><SpinnerGap size={14} className="animate-spin" />Gerando...</>
-                  : <><FilePdf size={14} weight="fill" />Gerar Proposta</>
+                  : <><FilePdf size={14} weight="fill" />Proposta</>
+                }
+              </button>
+              <button
+                onClick={() => gerarBriefingLead(selectedLead)}
+                disabled={gerandoBriefing}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
+                style={{ background: "rgba(139,92,246,0.10)", border: "1px solid rgba(139,92,246,0.25)", color: "#a78bfa", cursor: "pointer" }}
+              >
+                {gerandoBriefing
+                  ? <><SpinnerGap size={14} className="animate-spin" />Pesquisando...</>
+                  : <><Binoculars size={14} weight="fill" />Briefing</>
                 }
               </button>
             </div>
@@ -695,6 +727,108 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
               </button>
             </div>
           </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de briefing */}
+      {briefing && selectedLead && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
+          onClick={(e) => e.target === e.currentTarget && setBriefing(null)}>
+          <div className="w-full max-w-2xl flex flex-col rounded-2xl overflow-hidden" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-dim)", maxHeight: "90vh" }}>
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: "1px solid var(--border-dim)" }}>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(139,92,246,0.12)" }}>
+                  <Binoculars size={18} weight="fill" style={{ color: "#a78bfa" }} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: "var(--text-1)" }}>Briefing de Inteligência</p>
+                  <p className="text-xs" style={{ color: "var(--text-3)" }}>{selectedLead.nome} · {selectedLead.segmento}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => gerarBriefingLead(selectedLead)} disabled={gerandoBriefing}
+                  className="text-xs px-3 py-1.5 rounded-lg disabled:opacity-50 transition-opacity hover:opacity-70"
+                  style={{ color: "var(--text-3)", background: "var(--bg-surface)", border: "1px solid var(--border-dim)", cursor: "pointer" }}>
+                  {gerandoBriefing ? "Pesquisando..." : "↺ Atualizar"}
+                </button>
+                <button onClick={() => setBriefing(null)} style={{ color: "var(--text-3)", cursor: "pointer" }}>
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+
+              {/* Empresa */}
+              <BriefingSection icon="🏢" title="Empresa" color="#a78bfa">
+                <p className="text-sm font-semibold mb-1" style={{ color: "var(--text-1)" }}>{briefing.empresa?.titulo}</p>
+                <p className="text-sm leading-relaxed" style={{ color: "var(--text-2)" }}>{briefing.empresa?.descricao}</p>
+              </BriefingSection>
+
+              {/* Dores do setor */}
+              <BriefingSection icon="📉" title="Dores do Setor" color="#F59E0B">
+                <ul className="space-y-2">
+                  {briefing.dores_setor?.map((d: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: "var(--text-2)" }}>
+                      <span className="mt-0.5 flex-shrink-0" style={{ color: "#F59E0B" }}>•</span>
+                      {d}
+                    </li>
+                  ))}
+                </ul>
+              </BriefingSection>
+
+              {/* Presença digital */}
+              <BriefingSection icon="🌐" title="Presença Digital" color={briefing.presenca_digital?.avaliacao === "fraca" ? "#EF4444" : briefing.presenca_digital?.avaliacao === "media" ? "#F59E0B" : "#22C55E"}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold capitalize"
+                    style={{
+                      background: briefing.presenca_digital?.avaliacao === "fraca" ? "rgba(239,68,68,0.12)" : briefing.presenca_digital?.avaliacao === "media" ? "rgba(245,158,11,0.12)" : "rgba(34,197,94,0.12)",
+                      color: briefing.presenca_digital?.avaliacao === "fraca" ? "#EF4444" : briefing.presenca_digital?.avaliacao === "media" ? "#F59E0B" : "#22C55E",
+                    }}>
+                    {briefing.presenca_digital?.avaliacao}
+                  </span>
+                </div>
+                <ul className="space-y-2">
+                  {briefing.presenca_digital?.pontos?.map((p: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: "var(--text-2)" }}>
+                      <span className="mt-0.5 flex-shrink-0" style={{ color: "var(--text-3)" }}>→</span>
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+              </BriefingSection>
+
+              {/* Concorrentes */}
+              <BriefingSection icon="🥊" title="Concorrentes" color="#3B82F6">
+                <ul className="space-y-2">
+                  {briefing.concorrentes?.map((c: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: "var(--text-2)" }}>
+                      <span className="mt-0.5 flex-shrink-0" style={{ color: "#3B82F6" }}>•</span>
+                      {c}
+                    </li>
+                  ))}
+                </ul>
+              </BriefingSection>
+
+              {/* Argumentos de venda */}
+              <BriefingSection icon="🎯" title="Argumentos para a Reunião" color="#22C55E">
+                <div className="space-y-2">
+                  {briefing.argumentos_venda?.map((a: string, i: number) => (
+                    <div key={i} className="flex items-start gap-3 p-3 rounded-xl"
+                      style={{ background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.12)" }}>
+                      <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+                        style={{ background: "rgba(34,197,94,0.15)", color: "#22C55E" }}>{i + 1}</span>
+                      <p className="text-sm leading-relaxed" style={{ color: "var(--text-1)" }}>{a}</p>
+                    </div>
+                  ))}
+                </div>
+              </BriefingSection>
+            </div>
           </div>
         </div>
       )}
@@ -1172,6 +1306,20 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
     <div>
       <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-3)" }}>{label}</label>
       {children}
+    </div>
+  );
+}
+
+function BriefingSection({ icon, title, color, children }: { icon: string; title: string; color: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border-dim)" }}>
+      <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border-dim)" }}>
+        <span>{icon}</span>
+        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color }}>{title}</span>
+      </div>
+      <div className="px-4 py-3" style={{ background: "var(--bg-elevated)" }}>
+        {children}
+      </div>
     </div>
   );
 }
