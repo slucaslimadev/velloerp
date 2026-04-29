@@ -559,26 +559,26 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
             </div>
 
             {/* Action buttons */}
-            <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
               {selectedLead.whatsapp && (
                 <button
                   onClick={() => irParaWhatsApp(selectedLead)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors"
-                  style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.20)", color: "#22C55E" }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80"
+                  style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.20)", color: "#22C55E", cursor: "pointer" }}
                 >
-                  <WhatsappLogo size={17} weight="fill" />
-                  Ir para o WhatsApp
+                  <WhatsappLogo size={14} weight="fill" />
+                  WhatsApp
                 </button>
               )}
               <button
                 onClick={() => gerarPropostaLead(selectedLead)}
                 disabled={gerandoProposta}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60"
-                style={{ background: "rgba(65,190,234,0.10)", border: "1px solid rgba(65,190,234,0.25)", color: "var(--cyan)" }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
+                style={{ background: "rgba(65,190,234,0.10)", border: "1px solid rgba(65,190,234,0.25)", color: "var(--cyan)", cursor: "pointer" }}
               >
                 {gerandoProposta
-                  ? <><SpinnerGap size={17} className="animate-spin" />Gerando proposta...</>
-                  : <><FilePdf size={17} weight="fill" />Gerar Proposta PDF</>
+                  ? <><SpinnerGap size={14} className="animate-spin" />Gerando...</>
+                  : <><FilePdf size={14} weight="fill" />Gerar Proposta</>
                 }
               </button>
             </div>
