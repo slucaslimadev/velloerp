@@ -38,6 +38,18 @@ const inputStyle = {
 
 type ViewMode = "list" | "cards";
 
+function MetaAdsBadge() {
+  return (
+    <span style={{ background: "rgba(24,119,242,0.15)", border: "1px solid rgba(24,119,242,0.35)", color: "#4F9EFF", fontSize: "10px", padding: "1px 7px", borderRadius: "6px", fontWeight: 700, letterSpacing: "0.03em", whiteSpace: "nowrap" }}>
+      Meta Ads
+    </span>
+  );
+}
+
+function isMetaAds(observacoes: string | null) {
+  return observacoes?.includes("Origem: Meta Ads") ?? false;
+}
+
 interface PropostaFormData {
   // Dados do lead (pré-preenchidos, editáveis)
   nome: string;
@@ -556,7 +568,10 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
                           {format(new Date(lead.criado_em), "dd/MM/yyyy", { locale: ptBR })}
                         </td>
                         <td className="px-5 py-4">
-                          <p className="font-medium text-white leading-tight">{lead.nome ?? "—"}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-white leading-tight">{lead.nome ?? "—"}</p>
+                            {isMetaAds(lead.observacoes) && <MetaAdsBadge />}
+                          </div>
                           {lead.whatsapp && (
                             <span className="flex items-center gap-1 text-xs mt-1" style={{ color: "var(--text-3)" }}>
                               <WhatsappLogo size={11} />{lead.whatsapp}
@@ -598,9 +613,12 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
           <div className="w-full max-w-xl flex flex-col rounded-2xl overflow-hidden" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-dim)", maxHeight: "90vh" }}>
             <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: "1px solid var(--border-dim)" }}>
               <div>
-                <h3 className="font-semibold text-white text-base leading-tight" style={{ fontFamily: "var(--ff-head)" }}>
-                  {selectedLead.nome ?? "Sem nome"}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-white text-base leading-tight" style={{ fontFamily: "var(--ff-head)" }}>
+                    {selectedLead.nome ?? "Sem nome"}
+                  </h3>
+                  {isMetaAds(selectedLead.observacoes) && <MetaAdsBadge />}
+                </div>
                 <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>Detalhes do lead</p>
               </div>
               <button onClick={() => setSelectedLead(null)} className="p-2 rounded-xl transition-colors" style={{ color: "var(--text-3)", cursor: "pointer" }}>
@@ -1204,7 +1222,10 @@ export function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
-                              <p className="text-sm font-semibold truncate" style={{ color: "var(--text-1)" }}>{lead.nome}</p>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <p className="text-sm font-semibold truncate" style={{ color: "var(--text-1)" }}>{lead.nome}</p>
+                                {isMetaAds(lead.observacoes) && <MetaAdsBadge />}
+                              </div>
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 <ClassificacaoBadge classificacao={lead.classificacao as LeadClassificacao} />
                                 <span className="text-xs font-bold" style={{ color: "var(--cyan)" }}>{lead.pontuacao} pts</span>
