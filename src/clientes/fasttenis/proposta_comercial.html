@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proposta Comercial · FastTênis × VELLO IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Outfit:wght@300;400;600;700;800&family=Work+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:    #16171C;
+      --bg-surface: #1D1F25;
+      --bg-elev:    #252830;
+      --cyan:       #41BEEA;
+      --deep:       #2E59A6;
+      --mid:        #3992CC;
+      --grad:       linear-gradient(135deg, #41BEEA 0%, #3992CC 55%, #2E59A6 100%);
+      --t1:         #FFFFFF;
+      --t2:         #A3AECC;
+      --t3:         #6C7B9E;
+      --border:     rgba(65,190,234,0.12);
+      --border-hi:  rgba(65,190,234,0.28);
+    }
+
+    body {
+      background: var(--bg-base);
+      color: var(--t1);
+      font-family: 'Work Sans', sans-serif;
+      font-size: 14px;
+      line-height: 1.7;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ── DOCUMENT SHELL ── */
+    .doc {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* ════════════════════════════
+       CAPA
+    ════════════════════════════ */
+    .cover {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 56px 64px 56px;
+      position: relative;
+      border-bottom: 1px solid var(--border);
+      page-break-after: always;
+    }
+
+    /* Linha lateral esquerda da capa */
+    .cover::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      background: var(--grad);
+    }
+
+    .cover-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: auto;
+    }
+
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-img {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      background: #fff;
+      border-radius: 10px;
+      padding: 4px;
+    }
+
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .logo-name {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 900;
+      font-size: 20px;
+      letter-spacing: 4px;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+
+    .logo-sub {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 7px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--t3);
+    }
+
+    .cover-ref {
+      text-align: right;
+    }
+    .cover-ref p {
+      font-size: 12px;
+      color: var(--t3);
+      line-height: 1.6;
+    }
+    .cover-ref strong {
+      color: var(--t2);
+      font-weight: 500;
+    }
+
+    /* Corpo da capa */
+    .cover-body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex: 1;
+      padding: 80px 0 60px;
+    }
+
+    .cover-doc-type {
+      font-family: 'Work Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--t3);
+      margin-bottom: 24px;
+    }
+
+    .cover-client {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(52px, 8vw, 80px);
+      font-weight: 800;
+      line-height: 0.95;
+      letter-spacing: -3px;
+      margin-bottom: 32px;
+    }
+
+    .cover-client .c-for {
+      display: block;
+      font-size: 22px;
+      font-weight: 300;
+      letter-spacing: 0px;
+      color: var(--t2);
+      margin-bottom: 8px;
+    }
+
+    .cover-client .c-name {
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .cover-desc {
+      font-size: 15px;
+      font-weight: 300;
+      color: var(--t2);
+      max-width: 520px;
+      line-height: 1.8;
+      border-left: 2px solid var(--border-hi);
+      padding-left: 20px;
+    }
+
+    /* Grid de dados da capa */
+    .cover-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--border);
+      margin-top: 0;
+    }
+
+    .cg-item {
+      padding: 24px 0;
+      border-right: 1px solid var(--border);
+    }
+    .cg-item:last-child { border-right: none; }
+    .cg-item:not(:first-child) { padding-left: 24px; }
+
+    .cg-label {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--t3);
+      margin-bottom: 6px;
+    }
+    .cg-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--t1);
+    }
+
+    /* ════════════════════════════
+       SECTION HEADER
+    ════════════════════════════ */
+    .section {
+      padding: 0 64px;
+      page-break-inside: avoid;
+    }
+
+    .sec-header {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      padding: 48px 0 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+
+    .sec-num {
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 1px;
+      opacity: 0.7;
+      flex-shrink: 0;
+      padding-top: 3px;
+    }
+
+    .sec-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--t1);
+      letter-spacing: -0.3px;
+      flex: 1;
+    }
+
+    .sec-intro {
+      font-size: 14px;
+      font-weight: 300;
+      color: var(--t2);
+      margin-bottom: 28px;
+      line-height: 1.75;
+    }
+
+    /* ════════════════════════════
+       BLOCO DE DIAGNÓSTICO
+    ════════════════════════════ */
+    .diag-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 32px;
+    }
+    .diag-table tr {
+      border-bottom: 1px solid var(--border);
+    }
+    .diag-table tr:last-child { border-bottom: none; }
+    .diag-table td {
+      padding: 18px 0;
+      vertical-align: top;
+    }
+    .diag-table td:first-child {
+      width: 200px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--t1);
+      font-family: 'Outfit', sans-serif;
+      padding-right: 24px;
+    }
+    .diag-table td:last-child {
+      font-size: 13.5px;
+      font-weight: 300;
+      color: var(--t2);
+      line-height: 1.65;
+    }
+
+    .diag-icon {
+      display: inline-block;
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      background: rgba(65,190,234,0.08);
+      border: 1px solid var(--border-hi);
+      text-align: center;
+      line-height: 28px;
+      font-size: 13px;
+      margin-right: 10px;
+      vertical-align: middle;
+    }
+
+    /* ════════════════════════════
+       TABELA DE ESCOPO
+    ════════════════════════════ */
+    .scope-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 8px;
+    }
+
+    .scope-table thead th {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--t3);
+      padding: 0 0 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-hi);
+    }
+    .scope-table thead th:last-child { text-align: right; }
+
+    .scope-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    .scope-table tbody tr:last-child { border-bottom: none; }
+    .scope-table tbody tr:hover { background: rgba(65,190,234,0.03); }
+
+    .scope-table tbody td {
+      padding: 16px 0;
+      vertical-align: top;
+    }
+
+    .scope-table .col-num {
+      width: 40px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--cyan);
+      opacity: 0.7;
+      padding-right: 12px;
+      padding-top: 2px;
+    }
+
+    .scope-table .col-item strong {
+      display: block;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--t1);
+      margin-bottom: 3px;
+    }
+    .scope-table .col-item p {
+      font-size: 12.5px;
+      font-weight: 300;
+      color: var(--t2);
+      line-height: 1.6;
+    }
+
+    .scope-table .col-badge {
+      width: 100px;
+      text-align: right;
+      padding-left: 16px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+    .badge-core {
+      background: rgba(65,190,234,0.08);
+      color: var(--cyan);
+      border: 1px solid rgba(65,190,234,0.20);
+    }
+    .badge-cond {
+      background: rgba(245,158,11,0.07);
+      color: #F59E0B;
+      border: 1px solid rgba(245,158,11,0.18);
+    }
+
+    .scope-note {
+      font-size: 12px;
+      font-weight: 300;
+      color: var(--t3);
+      font-style: italic;
+      margin-top: 12px;
+    }
+
+    /* ════════════════════════════
+       FLUXO OPERACIONAL
+    ════════════════════════════ */
+    .flow-list {
+      counter-reset: flow-counter;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .flow-item {
+      counter-increment: flow-counter;
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 20px;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--border);
+      align-items: start;
+    }
+    .flow-item:last-child { border-bottom: none; }
+
+    .flow-item::before {
+      content: counter(flow-counter, decimal-leading-zero);
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--cyan);
+      opacity: 0.6;
+      padding-top: 2px;
+    }
+
+    .flow-item h4 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--t1);
+      margin-bottom: 4px;
+    }
+    .flow-item p {
+      font-size: 13px;
+      font-weight: 300;
+      color: var(--t2);
+      line-height: 1.65;
+    }
+
+    /* ════════════════════════════
+       INVESTIMENTO
+    ════════════════════════════ */
+    .invest-block {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hi);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .invest-header {
+      background: linear-gradient(135deg, rgba(65,190,234,0.08) 0%, rgba(46,89,166,0.10) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .invest-header .ih-label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--cyan);
+    }
+    .invest-header .ih-badge {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      background: rgba(65,190,234,0.10);
+      border: 1px solid var(--border-hi);
+      color: var(--cyan);
+      padding: 3px 10px;
+      border-radius: 4px;
+    }
+
+    .invest-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: start;
+      gap: 24px;
+      padding: 24px 28px;
+      border-bottom: 1px solid var(--border);
+    }
+    .invest-row:last-child { border-bottom: none; }
+
+    .invest-row .ir-label {
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--t1);
+      margin-bottom: 4px;
+    }
+    .invest-row .ir-desc {
+      font-size: 12.5px;
+      font-weight: 300;
+      color: var(--t2);
+      line-height: 1.6;
+    }
+    .invest-row .ir-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      white-space: nowrap;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: right;
+    }
+    .invest-row .ir-value.muted {
+      font-size: 16px;
+      background: none;
+      -webkit-text-fill-color: var(--t2);
+      color: var(--t2);
+      font-weight: 500;
+    }
+
+    .invest-obs {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-size: 12.5px;
+      font-weight: 300;
+      color: var(--t3);
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+    .invest-obs strong { color: var(--t2); font-weight: 500; }
+
+    /* ════════════════════════════
+       GARANTIAS / CHECKLIST
+    ════════════════════════════ */
+    .checklist {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13.5px;
+      font-weight: 400;
+      color: var(--t2);
+    }
+    .check-row:nth-child(odd) { padding-right: 32px; }
+    .check-row:nth-last-child(-n+2) { border-bottom: none; }
+
+    .check-dot {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: rgba(65,190,234,0.10);
+      border: 1px solid var(--border-hi);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .check-dot svg { display: block; }
+
+    /* ════════════════════════════
+       CRONOGRAMA
+    ════════════════════════════ */
+    .timeline-track {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .timeline-track::before {
+      content: '';
+      position: absolute;
+      height: 1px;
+      background: var(--border-hi);
+      top: 14px;
+      left: calc(12.5% + 8px);
+      right: calc(12.5% + 8px);
+    }
+
+    .tl-col { text-align: center; padding: 0 8px; }
+
+    .tl-dot {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--bg-base);
+      border: 1.5px solid var(--border-hi);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px;
+      position: relative;
+      z-index: 1;
+      font-family: 'Outfit', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    .tl-col strong {
+      display: block;
+      font-family: 'Outfit', sans-serif;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--t1);
+      margin-bottom: 5px;
+    }
+    .tl-col p {
+      font-size: 11px;
+      font-weight: 300;
+      color: var(--t3);
+      line-height: 1.55;
+    }
+
+    .tl-note {
+      font-size: 12.5px;
+      font-weight: 300;
+      color: var(--t3);
+      text-align: center;
+      margin-top: 16px;
+    }
+    .tl-note strong { color: var(--t2); font-weight: 500; }
+
+    /* ════════════════════════════
+       PRÓXIMOS PASSOS
+    ════════════════════════════ */
+    .steps-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .steps-table tr {
+      border-bottom: 1px solid var(--border);
+    }
+    .steps-table tr:last-child { border-bottom: none; }
+    .steps-table td {
+      padding: 18px 0;
+      vertical-align: top;
+    }
+    .steps-table .st-num {
+      width: 40px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      padding-right: 12px;
+    }
+    .steps-table .st-content strong {
+      display: block;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--t1);
+      margin-bottom: 3px;
+    }
+    .steps-table .st-content p {
+      font-size: 12.5px;
+      font-weight: 300;
+      color: var(--t2);
+      line-height: 1.6;
+    }
+
+    /* ════════════════════════════
+       RODAPÉ DO DOCUMENTO
+    ════════════════════════════ */
+    .doc-footer {
+      margin-top: 72px;
+      padding: 0 64px;
+    }
+
+    .footer-line {
+      height: 1px;
+      background: linear-gradient(90deg, var(--cyan) 0%, var(--deep) 60%, transparent 100%);
+      margin-bottom: 24px;
+    }
+
+    .footer-body {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      padding-bottom: 48px;
+    }
+
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .footer-logo-img {
+      width: 36px; height: 36px;
+      object-fit: contain;
+      background: #fff;
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .footer-brand .fn { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 14px; letter-spacing: 3px; color: var(--t2); }
+    .footer-brand .fs { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 7px; letter-spacing: 2px; text-transform: uppercase; color: var(--t3); }
+
+    .footer-right { text-align: right; }
+    .footer-right p { font-size: 12px; color: var(--t3); font-weight: 300; margin-bottom: 2px; }
+    .footer-right a { font-size: 12px; color: var(--cyan); text-decoration: none; }
+
+    .footer-note {
+      text-align: center;
+      font-size: 11px;
+      color: var(--t3);
+      font-weight: 300;
+      padding: 16px 0 24px;
+      border-top: 1px solid var(--border);
+      font-style: italic;
+    }
+
+    /* ════════════════════════════
+       PRINT
+    ════════════════════════════ */
+    @media print {
+      .cover { min-height: auto; page-break-after: always; }
+      .section { page-break-inside: avoid; }
+      body { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+<div class="doc">
+
+  <!-- ═══════════════════════════
+       CAPA
+  ═══════════════════════════ -->
+  <div class="cover">
+
+    <div class="cover-header">
+      <div class="logo-wrap">
+        <img class="logo-img" src="../../../public/logo.png" alt="VELLO IA" />
+        <div class="logo-text">
+          <div class="logo-name">VELLO</div>
+          <div class="logo-sub">Inteligência Artificial</div>
+        </div>
+      </div>
+      <div class="cover-ref">
+        <p><strong>Proposta Comercial</strong></p>
+        <p>Data: 29 de abril de 2026</p>
+        <p>Validade: 30 dias</p>
+      </div>
+    </div>
+
+    <div class="cover-body">
+      <p class="cover-doc-type">Proposta Comercial · Agente de IA WhatsApp</p>
+      <div class="cover-client">
+        <span class="c-for">Apresentada a</span>
+        <span class="c-name">FastTênis</span>
+      </div>
+      <p class="cover-desc">
+        Implementação de agente de IA conversacional no WhatsApp para
+        pré-qualificação de leads, nivelamento de alunos, agendamento de
+        aulas experimentais e locação de quadras — com atendimento
+        humanizado 24 horas por dia, 7 dias por semana.
+      </p>
+    </div>
+
+    <div class="cover-grid">
+      <div class="cg-item">
+        <div class="cg-label">Cliente</div>
+        <div class="cg-value">FastTênis (Franquia)</div>
+      </div>
+      <div class="cg-item">
+        <div class="cg-label">Segmento</div>
+        <div class="cg-value">Escola de Tênis</div>
+      </div>
+      <div class="cg-item">
+        <div class="cg-label">Volume de leads</div>
+        <div class="cg-value">~10–12 / dia</div>
+      </div>
+      <div class="cg-item">
+        <div class="cg-label">Canal</div>
+        <div class="cg-value">WhatsApp + Tráfego Pago</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════
+       01 · DIAGNÓSTICO
+  ═══════════════════════════ -->
+  <div class="section">
+    <div class="sec-header">
+      <span class="sec-num">01</span>
+      <span class="sec-title">Diagnóstico</span>
+    </div>
+    <p class="sec-intro">
+      Com base na reunião de 29/04/2026, mapeamos os principais gargalos operacionais
+      que limitam a conversão dos leads gerados pelo tráfego pago.
+    </p>
+
+    <table class="diag-table">
+      <tr>
+        <td>
+          <span class="diag-icon">⚡</span>Demora no contato
+        </td>
+        <td>
+          Leads chegam a qualquer hora. Sem resposta imediata, o interesse esfria e o
+          concorrente fecha primeiro. O gerente e a comercial não conseguem cobrir todos os turnos.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span class="diag-icon">🔄</span>Follow-up perdido
+        </td>
+        <td>
+          Leads silenciosos eram dados como perdidos no CRM por ausência de cadência de
+          reengajamento estruturada. Volume de oportunidades desperdiçadas é alto.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span class="diag-icon">🎾</span>Nivelamento manual
+        </td>
+        <td>
+          Identificar o nível técnico do aluno (Iniciante B → 2ª Classe) e alocá-lo na turma
+          adequada exige atenção constante do gerente, que tem disponibilidade limitada.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span class="diag-icon">📅</span>Locação sem agilidade
+        </td>
+        <td>
+          Locações de quadra são vendas simples que travam por falta de um processo objetivo
+          de consulta de disponibilidade, confirmação de dados e geração de pagamento.
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════
+       02 · ESCOPO DE ENTREGA
+  ═══════════════════════════ -->
+  <div class="section">
+    <div class="sec-header">
+      <span class="sec-num">02</span>
+      <span class="sec-title">Escopo de entrega</span>
+    </div>
+    <p class="sec-intro">
+      O agente opera diretamente nos números de WhatsApp da FastTênis, com suporte a
+      múltiplos números simultâneos. Os itens marcados como <strong style="color:var(--cyan)">Core</strong> são incluídos no setup.
+      Itens <strong style="color:#F59E0B">Condicionais</strong> dependem de API disponível no sistema de destino.
+    </p>
+
+    <table class="scope-table">
+      <thead>
+        <tr>
+          <th style="width:40px"></th>
+          <th>Entregável</th>
+          <th style="width:90px">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-num">01</td>
+          <td class="col-item">
+            <strong>Agente de pré-qualificação humanizado</strong>
+            <p>Atende leads 24/7 com linguagem natural. Coleta intenção, urgência e perfil antes de acionar o comercial — sem parecer robô.</p>
+          </td>
+          <td class="col-badge"><span class="badge badge-core">Core</span></td>
+        </tr>
+        <tr>
+          <td class="col-num">02</td>
+          <td class="col-item">
+            <strong>Suporte a múltiplos números WhatsApp</strong>
+            <p>O agente opera em todos os números conectados à operação.</p>
+          </td>
+          <td class="col-badge"><span class="badge badge-core">Core</span></td>
+        </tr>
+        <tr>
+          <td class="col-num">03</td>
+          <td class="col-item">
+            <strong>Fluxo de nivelamento de alunos</strong>
+            <p>Identifica o nível técnico (Iniciante B → 2ª Classe) e recomenda a turma ideal, respeitando as regras de compatibilidade entre níveis adjacentes.</p>
+          </td>
+          <td class="col-badge"><span class="badge badge-core">Core</span></td>
+        </tr>
+        <tr>
+          <td class="col-num">04</td>
+          <td class="col-item">
+            <strong>Agendamento da aula experimental gratuita</strong>
+            <p>Agenda a 1ª aula em horário compatível com o nível e a disponibilidade — sem intervenção humana.</p>
+          </td>
+          <td class="col-badge"><span class="badge badge-core">Core</span></td>
+        </tr>
+        <tr>
+          <td class="col-num">05</td>
+          <td class="col-item">
+            <strong>Fluxo express de locação de quadra</strong>
+            <p>Captura dados, confirma disponibilidade e direciona para pagamento. Fechamento objetivo em poucas mensagens.</p>
+          </td>
+          <td class="col-badge"><span class="badge badge-core">Core</span></td>
+        </tr>
+        <tr>
+          <td class="col-num">06</td>
+          <td class="col-item">
+            <strong>Follow-up automático por cadência</strong>
+            <p>Leads silenciosos recebem reengajamento automático em 1 hora, 1 dia e 3 dias. Nenhum lead esquecido no funil.</p>
+          </td>
+          <td class="col-badge"><span class="badge badge-core">Core</span></td>
+        </tr>
+        <tr>
+          <td class="col-num">07</td>
+          <td class="col-item">
+            <strong>Integração com PlayFest</strong>
+            <p>Consulta de disponibilidade de horários em tempo real, caso a plataforma disponibilize acesso via API.</p>
+          </td>
+          <td class="col-badge"><span class="badge badge-cond">Cond.</span></td>
+        </tr>
+        <tr>
+          <td class="col-num">08</td>
+          <td class="col-item">
+            <strong>Integração com RD Station</strong>
+            <p>Avanço automático de etapas no funil conforme o lead evolui na conversa, se disponível via API.</p>
+          </td>
+          <td class="col-badge"><span class="badge badge-cond">Cond.</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="scope-note">* Integrações condicionais serão avaliadas e orçadas separadamente após verificação de disponibilidade de API.</p>
+  </div>
+
+  <!-- ═══════════════════════════
+       03 · FLUXO OPERACIONAL
+  ═══════════════════════════ -->
+  <div class="section">
+    <div class="sec-header">
+      <span class="sec-num">03</span>
+      <span class="sec-title">Fluxo operacional</span>
+    </div>
+    <p class="sec-intro">
+      Do primeiro contato ao handoff para o comercial — sem depender da disponibilidade do time.
+    </p>
+
+    <div class="flow-list">
+      <div class="flow-item">
+        <div>
+          <h4>Lead chega pelo WhatsApp</h4>
+          <p>Via tráfego pago, indicação ou busca orgânica. O agente responde em segundos, independente do horário ou dia da semana.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div>
+          <h4>Pré-qualificação e coleta de intenção</h4>
+          <p>O agente identifica se o lead busca matrícula, locação de quadra ou informações gerais, e coleta os dados necessários de forma natural.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div>
+          <h4>Roteamento por intenção</h4>
+          <p>Matrícula → nivelamento + agendamento experimental. Locação → dados + disponibilidade + pagamento. Dúvidas → informações sobre planos e metodologia.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div>
+          <h4>Handoff qualificado para o comercial</h4>
+          <p>Lead com contexto completo. O time só precisa confirmar o agendamento ou enviar o link de pagamento — fechamento assistido, não do zero.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div>
+          <h4>Cadência de follow-up automático</h4>
+          <p>Se o lead para de responder, o reengajamento é ativado automaticamente nos intervalos definidos. Zero intervenção humana necessária.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════
+       04 · INVESTIMENTO
+  ═══════════════════════════ -->
+  <div class="section">
+    <div class="sec-header">
+      <span class="sec-num">04</span>
+      <span class="sec-title">Investimento</span>
+    </div>
+    <p class="sec-intro">
+      Modelo baseado em setup único + comissionamento por resultado, alinhando o sucesso
+      da VELLO ao crescimento da FastTênis.
+    </p>
+
+    <div class="invest-block">
+      <div class="invest-header">
+        <span class="ih-label">Resumo financeiro da proposta</span>
+        <span class="ih-badge">Modelo híbrido</span>
+      </div>
+      <div class="invest-row">
+        <div>
+          <div class="ir-label">Setup — implementação completa</div>
+          <div class="ir-desc">
+            Desenvolvimento de todos os fluxos, configuração, testes, homologação com o franqueado
+            e ativação em produção. Pagamento único, realizado antes do início do desenvolvimento.
+          </div>
+        </div>
+        <div class="ir-value">R$ 1.500</div>
+      </div>
+      <div class="invest-row">
+        <div>
+          <div class="ir-label">Comissão por resultado</div>
+          <div class="ir-desc">
+            Percentual ou valor fixo por matrícula efetivada ou aula experimental agendada e
+            realizada via agente. Valor e métricas definidos em conjunto com o franqueado
+            antes da ativação em produção.
+          </div>
+        </div>
+        <div class="ir-value muted">A negociar</div>
+      </div>
+    </div>
+
+    <div class="invest-obs">
+      <strong>Garantias incluídas:</strong> 30 dias de acompanhamento pós-ativação, ajustes de
+      tom e script na fase de homologação, suporte a múltiplos números WhatsApp e follow-up automático
+      por cadência — tudo incluído no valor do setup.
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════
+       05 · ENTREGÁVEIS GARANTIDOS
+  ═══════════════════════════ -->
+  <div class="section">
+    <div class="sec-header">
+      <span class="sec-num">05</span>
+      <span class="sec-title">Incluso no contrato</span>
+    </div>
+
+    <div class="checklist">
+      <div class="check-row">
+        <div class="check-dot">
+          <svg width="8" height="7" viewBox="0 0 8 7" fill="none">
+            <path d="M1 3.5L2.8 5.5L7 1" stroke="#41BEEA" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Atendimento 24h, 7 dias por semana
+      </div>
+      <div class="check-row">
+        <div class="check-dot">
+          <svg width="8" height="7" viewBox="0 0 8 7" fill="none">
+            <path d="M1 3.5L2.8 5.5L7 1" stroke="#41BEEA" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Múltiplos números WhatsApp simultâneos
+      </div>
+      <div class="check-row">
+        <div class="check-dot">
+          <svg width="8" height="7" viewBox="0 0 8 7" fill="none">
+            <path d="M1 3.5L2.8 5.5L7 1" stroke="#41BEEA" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Testes completos antes da ativação
+      </div>
+      <div class="check-row">
+        <div class="check-dot">
+          <svg width="8" height="7" viewBox="0 0 8 7" fill="none">
+            <path d="M1 3.5L2.8 5.5L7 1" stroke="#41BEEA" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Ajustes de tom e script na homologação
+      </div>
+      <div class="check-row">
+        <div class="check-dot">
+          <svg width="8" height="7" viewBox="0 0 8 7" fill="none">
+            <path d="M1 3.5L2.8 5.5L7 1" stroke="#41BEEA" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Follow-up automático por cadência
+      </div>
+      <div class="check-row">
+        <div class="check-dot">
+          <svg width="8" height="7" viewBox="0 0 8 7" fill="none">
+            <path d="M1 3.5L2.8 5.5L7 1" stroke="#41BEEA" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Fluxo de nivelamento + agendamento
+      </div>
+      <div class="check-row">
+        <div class="check-dot">
+          <svg width="8" height="7" viewBox="0 0 8 7" fill="none">
+            <path d="M1 3.5L2.8 5.5L7 1" stroke="#41BEEA" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        Fluxo express de locação de quadra
+      </div>
+      <div class="check-row">
+        <div class="check-dot">
+          <svg width="8" height="7" viewBox="0 0 8 7" fill="none">
+            <path d="M1 3.5L2.8 5.5L7 1" stroke="#41BEEA" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        30 dias de acompanhamento pós-ativação
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════
+       06 · CRONOGRAMA
+  ═══════════════════════════ -->
+  <div class="section">
+    <div class="sec-header">
+      <span class="sec-num">06</span>
+      <span class="sec-title">Cronograma estimado</span>
+    </div>
+
+    <div class="timeline-track">
+      <div class="tl-col">
+        <div class="tl-dot">1</div>
+        <strong>Briefing</strong>
+        <p>Alinhamento final de fluxos e tom de voz</p>
+      </div>
+      <div class="tl-col">
+        <div class="tl-dot">2</div>
+        <strong>Desenvolvimento</strong>
+        <p>Construção do agente e todos os fluxos</p>
+      </div>
+      <div class="tl-col">
+        <div class="tl-dot">3</div>
+        <strong>Homologação</strong>
+        <p>Testes com o franqueado e ajustes finos</p>
+      </div>
+      <div class="tl-col">
+        <div class="tl-dot">4</div>
+        <strong>Produção</strong>
+        <p>Ativação e monitoramento inicial</p>
+      </div>
+    </div>
+
+    <p class="tl-note">
+      Prazo estimado: <strong>7 a 14 dias corridos</strong> após aprovação da proposta e confirmação do pagamento do setup.
+    </p>
+  </div>
+
+  <!-- ═══════════════════════════
+       07 · PRÓXIMOS PASSOS
+  ═══════════════════════════ -->
+  <div class="section">
+    <div class="sec-header">
+      <span class="sec-num">07</span>
+      <span class="sec-title">Próximos passos</span>
+    </div>
+
+    <table class="steps-table">
+      <tr>
+        <td class="st-num">01</td>
+        <td class="st-content">
+          <strong>Aprovação da proposta pelo franqueado</strong>
+          <p>Alinhamento interno entre gerente e franqueado sobre modelo de comissão e escopo final.</p>
+        </td>
+      </tr>
+      <tr>
+        <td class="st-num">02</td>
+        <td class="st-content">
+          <strong>Definição da comissão e assinatura do contrato</strong>
+          <p>Fechamento das condições comerciais e formalização por escrito de ambas as partes.</p>
+        </td>
+      </tr>
+      <tr>
+        <td class="st-num">03</td>
+        <td class="st-content">
+          <strong>Pagamento do setup e início imediato</strong>
+          <p>Confirmado o pagamento de R$ 1.500, o desenvolvimento começa na mesma semana.</p>
+        </td>
+      </tr>
+      <tr>
+        <td class="st-num">04</td>
+        <td class="st-content">
+          <strong>Briefing detalhado e acesso aos sistemas</strong>
+          <p>Compartilhamento de credenciais WhatsApp, acesso ao PlayFest (se disponível) e RD Station.</p>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════
+       RODAPÉ
+  ═══════════════════════════ -->
+  <div class="doc-footer">
+    <div class="footer-line"></div>
+    <div class="footer-body">
+      <div class="footer-left">
+        <img class="footer-logo-img" src="../../../public/logo.png" alt="VELLO IA" />
+        <div class="footer-brand">
+          <div class="fn">VELLO</div>
+          <div class="fs">Inteligência Artificial</div>
+        </div>
+      </div>
+      <div class="footer-right">
+        <p>Lucas Lima · Fundador</p>
+        <a href="mailto:lucaslima.rec@gmail.com">lucaslima.rec@gmail.com</a>
+      </div>
+    </div>
+    <p class="footer-note">
+      Esta proposta é confidencial e destinada exclusivamente ao cliente nomeado neste documento.
+      Validade de 30 dias a partir de 29 de abril de 2026.
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

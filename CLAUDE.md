@@ -2,7 +2,7 @@
 
 ## O que é este projeto
 
-Mini ERP interno da **VELLO Inteligência Artificial** hospedado em `app.velloia.com.br`. Gerencia leads gerados por um agente de IA no WhatsApp (Evolution API + OpenAI + n8n) que insere dados diretamente no Supabase. O ERP **só consome** esses dados — não tem formulário de cadastro manual de leads.
+Mini ERP interno da **VELLO Inteligência Artificial** hospedado em `sistema.velloia.com.br`. Gerencia leads gerados por um agente de IA no WhatsApp (Evolution API + OpenAI + n8n) que insere dados diretamente no Supabase. O ERP **só consome** esses dados — não tem formulário de cadastro manual de leads.
 
 ## Stack
 

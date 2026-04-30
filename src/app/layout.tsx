@@ -47,7 +47,7 @@ export default function RootLayout({
         } as React.CSSProperties
       }
     >
-      <body className="min-h-full antialiased bg-[#16171C] text-white">
+      <body className="min-h-full antialiased bg-[#16171C] text-white" suppressHydrationWarning>
         <TooltipProvider>
           {children}
         </TooltipProvider>
