@@ -46,7 +46,7 @@ function MetaAdsBadge() {
   );
 }
 
-function isMetaAds(observacoes: string | null) {
+function isMetaAds(observacoes: string | null | undefined) {
   return observacoes?.includes("Origem: Meta Ads") ?? false;
 }
 
