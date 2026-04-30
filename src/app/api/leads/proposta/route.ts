@@ -144,7 +144,8 @@ Retorne APENAS o JSON válido, sem explicações.`;
 
   try {
     const buffer = await renderToBuffer(
-      createElement(PropostaPDF, { c: dadosProposta })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      createElement(PropostaPDF, { c: dadosProposta }) as any
     );
     const base64 = Buffer.from(buffer).toString("base64");
     const fileName = `Proposta-VELLO-${nome.replace(/[^a-zA-Z0-9]/g, "-")}.pdf`;
