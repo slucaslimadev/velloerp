@@ -118,4 +118,47 @@ async function processarLead(value: {
     tentativas_requalificacao: 0,
     observacoes,
   });
+
+  await notificarWhatsApp({ nome, whatsapp, volume, cidade, campanha: data.campaign_name });
+}
+
+async function notificarWhatsApp(lead: {
+  nome: string | null;
+  whatsapp: string | null;
+  volume: string | null;
+  cidade: string | null;
+  campanha: string | null;
+}) {
+  const numero = process.env.ALERT_WHATSAPP_NUMBER;
+  if (!numero) return;
+
+  const mensagem = [
+    `🎯 *Novo lead — Meta Ads*`,
+    ``,
+    `👤 *Nome:* ${lead.nome ?? "Não informado"}`,
+    `📱 *WhatsApp:* ${lead.whatsapp ?? "Não informado"}`,
+    lead.cidade ? `📍 *Cidade:* ${lead.cidade}` : null,
+    lead.volume ? `📊 *Leads/mês:* ${lead.volume}` : null,
+    lead.campanha ? `📣 *Campanha:* ${lead.campanha}` : null,
+    ``,
+    `Acesse: https://sistema.velloia.com.br/leads`,
+  ]
+    .filter((l) => l !== null)
+    .join("\n");
+
+  try {
+    await fetch(
+      `${process.env.EVOLUTION_API_URL}/message/sendText/${process.env.EVOLUTION_INSTANCE}`,
+      {
+        method: "POST",
+        headers: {
+          apikey: process.env.EVOLUTION_API_KEY!,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ number: numero, text: mensagem }),
+      }
+    );
+  } catch (err) {
+    console.error("[meta-leads] Erro ao notificar WhatsApp:", err);
+  }
 }
