@@ -5,7 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
 import {
-  CurrencyDollar, Users, TrendAt, ChartBar, ArrowsClockwise,
+  CurrencyDollar, Users, ChartLineUp, ChartBar, ArrowsClockwise,
   Play, Pause, Warning,
 } from "@phosphor-icons/react";
 
@@ -217,7 +217,7 @@ export function CampanhasClient({ campanhasIniciais }: { campanhasIniciais: Camp
           color="#22C55E"
         />
         <KpiCard
-          icon={<TrendAt size={20} weight="duotone" />}
+          icon={<ChartLineUp size={20} weight="duotone" />}
           label="CTR médio"
           value={`${totais.ctr.toFixed(2)}%`}
           sub={`${num(totais.clicks)} cliques`}
