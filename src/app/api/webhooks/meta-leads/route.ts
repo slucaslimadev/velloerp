@@ -84,6 +84,7 @@ async function processarLead(value: {
     campos["full_name"] ?? campos["nome_completo"] ?? campos["name"] ?? null;
 
   const whatsapp =
+    campos["whatsapp_number"] ??
     campos["phone_number"] ??
     campos["whatsapp"] ??
     campos["numero_do_whatsapp"] ??
