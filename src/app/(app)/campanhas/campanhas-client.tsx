@@ -148,7 +148,7 @@ export function CampanhasClient({ campanhasIniciais }: { campanhasIniciais: Camp
     }
     const cpl = leads > 0 ? spend / leads : 0;
     const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
-    return { spend, leads, cpl, impressions, ctr };
+    return { spend, leads, cpl, impressions, ctr, clicks };
   }, [campanhas]);
 
   const chartData = useMemo(() =>
