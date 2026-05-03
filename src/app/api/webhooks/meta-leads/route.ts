@@ -115,7 +115,6 @@ async function processarLead(value: {
     segmento: "Concessionária de Veículos",
     tamanho_empresa: volume,
     status: "Novo",
-    ia_ativa: false,
     tentativas_requalificacao: 0,
     observacoes,
   });
