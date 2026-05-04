@@ -5,7 +5,7 @@ import type { ChatCompletionMessageParam, ChatCompletionContentPart } from "open
 
 let _openai: OpenAI | null = null;
 function ai() {
-  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY?.trim() });
   return _openai;
 }
 
@@ -102,7 +102,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const resposta = completion.choices[0]?.message?.content ?? "";
     return NextResponse.json({ resposta });
   } catch (err) {
-    console.error("[agentes/chat]", err);
-    return NextResponse.json({ error: "Erro ao processar mensagem" }, { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[agentes/chat] modelo:", modelo, "erro:", msg);
+    return NextResponse.json({ error: "Erro ao processar mensagem", detail: msg }, { status: 500 });
   }
 }
