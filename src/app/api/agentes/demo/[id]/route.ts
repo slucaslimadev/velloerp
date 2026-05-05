@@ -9,6 +9,12 @@ function db() {
   );
 }
 
+const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+
+function normalizeModel(modelo?: string): string {
+  return modelo?.startsWith("gemini-") ? modelo : DEFAULT_GEMINI_MODEL;
+}
+
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -30,7 +36,7 @@ export async function PUT(
       segmento: segmento?.trim() || "",
       descricao: descricao?.trim() || "",
       system_prompt: systemPrompt.trim(),
-      modelo: modelo || "gpt-4o-mini",
+      modelo: normalizeModel(modelo),
       sugestoes: sugestoes ?? [],
       atualizado_em: new Date().toISOString(),
     })

@@ -14,10 +14,15 @@ import type { DadosLead, Mensagem } from "./types";
 
 let _openai: OpenAI | null = null;
 function getOpenAI() {
-  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  if (!_openai) {
+    _openai = new OpenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    });
+  }
   return _openai;
 }
-const MODEL = "gpt-4.1-nano";
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 
 async function comRetry<T>(fn: () => Promise<T>, tentativas = 3, delayMs = 1000): Promise<T> {
   try {
@@ -240,7 +245,7 @@ export async function processarMensagem(
   ];
 
   await enviarDigitando(whatsapp);
-  console.log(`[Agent] Chamando OpenAI (${MODEL})...`);
+  console.log(`[Agent] Chamando Gemini (${MODEL})...`);
 
   try {
     const response = await comRetry(() =>

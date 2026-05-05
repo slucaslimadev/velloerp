@@ -3,9 +3,16 @@ import OpenAI from "openai";
 
 let _openai: OpenAI | null = null;
 function ai() {
-  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  if (!_openai) {
+    _openai = new OpenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    });
+  }
   return _openai;
 }
+
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const { nome, segmento, descricao } = await req.json();
@@ -62,7 +69,7 @@ Retorne APENAS o system prompt final, sem explicações, sem bloco de código, s
 
   try {
     const completion = await ai().chat.completions.create({
-      model: "gpt-4o",
+      model: MODEL,
       messages: [{ role: "user", content: prompt }],
       max_tokens: 1200,
       temperature: 0.7,

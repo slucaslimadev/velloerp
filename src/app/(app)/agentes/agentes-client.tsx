@@ -20,9 +20,8 @@ const EMOJIS_SUGERIDOS = [
 ];
 
 const MODELOS = [
-  { value: "gpt-4o", label: "GPT-4o", desc: "Mais inteligente, suporta imagens" },
-  { value: "gpt-4o-mini", label: "GPT-4o Mini", desc: "Rápido e econômico" },
-  { value: "gpt-4.1-nano", label: "GPT-4.1 Nano", desc: "Ultra rápido, básico" },
+  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash", desc: "Rapido, economico e multimodal" },
+  { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro", desc: "Mais forte para raciocinio e analise" },
 ];
 
 function slugify(str: string): string {
@@ -50,7 +49,7 @@ interface WizardForm {
 
 const DEFAULT_FORM: WizardForm = {
   nome: "", emoji: "🤖", cor: "#41BEEA", segmento: "",
-  descricao: "", systemPrompt: "", modelo: "gpt-4o-mini",
+  descricao: "", systemPrompt: "", modelo: "gemini-2.5-flash",
   sugestoes: [], sugestaoInput: "",
 };
 
@@ -257,7 +256,7 @@ export function AgentesClient({ agentes: initialAgentes }: { agentes: AgenteConf
               Demonstração de Agentes
             </h1>
             <p className="mt-1 text-sm" style={{ color: "var(--text-3)" }}>
-              Agentes de IA que seus clientes podem testar — suportam texto, áudio e documentos
+              Agentes de IA que seus clientes podem testar por texto
             </p>
           </div>
           <button
@@ -379,7 +378,7 @@ export function AgentesClient({ agentes: initialAgentes }: { agentes: AgenteConf
             Todos os agentes suportam
           </p>
           <div className="flex flex-wrap gap-3">
-            {[{ icon: "💬", label: "Texto" }, { icon: "🎤", label: "Áudio (voz)" }, { icon: "📄", label: "PDF" }, { icon: "🖼️", label: "Imagens" }].map(({ icon, label }) => (
+            {[{ icon: "💬", label: "Texto" }].map(({ icon, label }) => (
               <div key={label} className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
                 style={{ background: "rgba(65,190,234,0.08)", border: "1px solid rgba(65,190,234,0.12)" }}>
                 <span>{icon}</span>

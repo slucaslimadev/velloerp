@@ -18,6 +18,12 @@ function slugify(str: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+
+function normalizeModel(modelo?: string): string {
+  return modelo?.startsWith("gemini-") ? modelo : DEFAULT_GEMINI_MODEL;
+}
+
 export async function GET(): Promise<NextResponse> {
   const { data, error } = await db()
     .from("agentes_demo")
@@ -64,7 +70,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       segmento: segmento?.trim() || "",
       descricao: descricao?.trim() || "",
       system_prompt: systemPrompt.trim(),
-      modelo: modelo || "gpt-4o-mini",
+      modelo: normalizeModel(modelo),
       sugestoes: sugestoes ?? [],
     })
     .select()

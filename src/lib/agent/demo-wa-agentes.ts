@@ -6,9 +6,15 @@ import type { Mensagem } from "./types";
 
 let _openai: OpenAI | null = null;
 function getOpenAI() {
-  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  if (!_openai) {
+    _openai = new OpenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    });
+  }
   return _openai;
 }
+const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 
 // ─── Normalização de número WA ────────────────────────────────────────────────
 
@@ -57,7 +63,7 @@ export interface DemoWaAgente {
 export const DEMO_WA_AGENTES: DemoWaAgente[] = [
   {
     numeros: ["556199872122"],
-    modelo: "gpt-4o",
+    modelo: DEFAULT_GEMINI_MODEL,
     systemPrompt: `Você é o **Consultor Virtual da AutoPrime**, uma concessionária multimarcas em Brasília, desenvolvido pela VELLO Inteligência Artificial.
 
 Seu objetivo é apresentar os veículos disponíveis, tirar dúvidas sobre condições de pagamento e financiamento, e agendar test drives.

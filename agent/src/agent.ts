@@ -11,8 +11,11 @@ import {
 import { enviarMensagem, enviarDigitando, enviarAlerta } from "./evolution";
 import type { DadosLead, Mensagem } from "./types";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const MODEL = "gpt-4.1-nano";
+const openai = new OpenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+});
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 
 async function comRetry<T>(fn: () => Promise<T>, tentativas = 3, delayMs = 1000): Promise<T> {
   try {
@@ -207,7 +210,7 @@ export async function processarMensagem(
   ];
 
   await enviarDigitando(whatsapp);
-  console.log(`[Agent] Chamando OpenAI (${MODEL})...`);
+  console.log(`[Agent] Chamando Gemini (${MODEL})...`);
 
   try {
     const response = await comRetry(() =>

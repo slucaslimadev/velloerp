@@ -5,8 +5,41 @@ import type { ChatCompletionMessageParam, ChatCompletionContentPart } from "open
 
 let _openai: OpenAI | null = null;
 function ai() {
-  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY?.trim() });
+  if (!_openai) {
+    _openai = new OpenAI({
+      apiKey: process.env.GEMINI_API_KEY?.trim(),
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    });
+  }
   return _openai;
+}
+
+const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+
+function normalizeModel(modelo?: string): string {
+  return modelo?.startsWith("gemini-") ? modelo : DEFAULT_GEMINI_MODEL;
+}
+
+function buildCurrentDateContext(): string {
+  const now = new Date();
+  const timeZone = process.env.AGENT_TIME_ZONE ?? "America/Sao_Paulo";
+  const formatted = new Intl.DateTimeFormat("pt-BR", {
+    timeZone,
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(now);
+
+  return [
+    "## Contexto atual de data e hora",
+    `Agora e ${formatted} (${timeZone}).`,
+    'Use este contexto para interpretar termos relativos como "hoje", "amanha", "sexta", "mais tarde" e horarios pedidos pelo usuario.',
+    "Quando falar de agenda, confirme datas e horarios em relacao a este contexto atual.",
+  ].join("\n");
 }
 
 export interface ChatMessage {
@@ -25,8 +58,9 @@ function buildOpenAIMessages(
   systemPrompt: string,
   messages: ChatMessage[]
 ): ChatCompletionMessageParam[] {
+  const promptWithDateContext = `${systemPrompt}\n\n${buildCurrentDateContext()}`;
   const result: ChatCompletionMessageParam[] = [
-    { role: "system", content: systemPrompt },
+    { role: "system", content: promptWithDateContext },
   ];
 
   for (const msg of messages) {
@@ -80,13 +114,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // When systemPromptOverride is provided (wizard preview), skip slug validation
   let systemPrompt = systemPromptOverride ?? "";
-  let modelo = modeloOverride ?? "gpt-4o-mini";
+  let modelo = normalizeModel(modeloOverride);
 
   if (!systemPromptOverride) {
     const agente = await getAgente(slug);
     if (!agente) return NextResponse.json({ error: "Agente não encontrado" }, { status: 404 });
     systemPrompt = agente.systemPrompt;
-    modelo = agente.modelo;
+    modelo = normalizeModel(agente.modelo);
   }
 
   const openaiMessages = buildOpenAIMessages(systemPrompt, messages);
