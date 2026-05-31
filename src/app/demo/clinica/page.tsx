@@ -423,7 +423,7 @@ export default function ClinicaDemo() {
               autoPlay muted loop playsInline
               style={{ transform: `translateY(${videoParallax}px)` }}
             >
-              <source src="/clinica-scrub.mp4" type="video/mp4" />
+              <source src="https://mfrawrvnaaqubhzihujf.supabase.co/storage/v1/object/public/demo-assets/clinica-scrub.mp4" type="video/mp4" />
             </video>
           </div>
           <div className="hero-overlay" />
