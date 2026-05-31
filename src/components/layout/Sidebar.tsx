@@ -13,6 +13,7 @@ import {
   ChatCircleDots,
   Robot,
   MegaphoneSimple,
+  Crosshair,
 } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { VelloLogo } from "@/components/shared/VelloLogo";
@@ -22,7 +23,8 @@ const navItems = [
   { href: "/leads",         label: "Leads",        icon: Users         },
   { href: "/kanban",        label: "Kanban",       icon: Kanban        },
   { href: "/clientes",      label: "Clientes",     icon: Briefcase     },
-  { href: "/campanhas",    label: "Campanhas",    icon: MegaphoneSimple},
+  { href: "/campanhas",     label: "Campanhas",    icon: MegaphoneSimple },
+  { href: "/prospeccao",   label: "Prospecção",   icon: Crosshair       },
   { href: "/conversas",     label: "Conversas",    icon: ChatCircleDots},
   { href: "/agentes",       label: "Agentes Demo", icon: Robot         },
   { href: "/configuracoes", label: "Configurações",icon: Gear          },

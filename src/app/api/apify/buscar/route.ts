@@ -103,7 +103,7 @@ function mapToLead(item: GoogleMapsItem) {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const { busca, quantidade } = await req.json();
+  const { busca, quantidade, semSite = false } = await req.json();
 
   if (!busca?.trim()) {
     return NextResponse.json({ error: "Campo busca é obrigatório" }, { status: 400 });
@@ -145,9 +145,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // Etapa 1: descarta fechados, sem título ou sem telefone
-  const ativos = items.filter(
+  let ativos = items.filter(
     (i: GoogleMapsItem) => !i.permanentlyClosed && !i.temporarilyClosed && i.title && i.phoneUnformatted
   );
+
+  // Etapa 1b: se solicitado, mantém apenas os sem site
+  if (semSite) {
+    ativos = ativos.filter((i: GoogleMapsItem) => !i.website);
+  }
 
   // Etapa 2: filtra apenas celulares brasileiros pelo formato
   const celulares = ativos.filter((i: GoogleMapsItem) => isCelularBrasileiro(i.phoneUnformatted));
