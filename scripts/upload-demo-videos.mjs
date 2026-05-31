@@ -16,6 +16,7 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 const FILES = [
   { local: "public/clinica-hero.mp4",  remote: "clinica-hero.mp4"  },
   { local: "public/clinica-scrub.mp4", remote: "clinica-scrub.mp4" },
+  { local: "public/vet-hero.mp4",      remote: "vet-hero.mp4"      },
 ];
 
 async function main() {
