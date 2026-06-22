@@ -4,6 +4,8 @@ import { processarMensagem, MSG_MIDIA } from "@/lib/agent/agent";
 import { DEMO_WA_AGENTES, processarMensagemDemoWa, normWA } from "@/lib/agent/demo-wa-agentes";
 import { enviarMensagem, getMediaBase64 } from "@/lib/agent/evolution";
 import { transcreverAudioBase64 } from "@/lib/agent/audio";
+import { getAgentePorInstancia } from "@/lib/agent/clientes-agentes";
+import { processarMensagemAgente } from "@/lib/agent/agente-generico";
 import type { EvolutionWebhookPayload } from "@/lib/agent/types";
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -23,6 +25,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ received: true });
   }
 
+  const instance = payload.instance ?? (process.env.EVOLUTION_INSTANCE ?? "vello");
   const { key, message, messageType, pushName } = payload.data;
 
   if (key.fromMe || key.remoteJid.endsWith("@g.us")) {
@@ -30,6 +33,41 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const whatsapp = key.remoteJid.replace("@s.whatsapp.net", "").replace("@g.us", "");
+
+  // ── Roteamento multi-tenant: instância de um cliente-agente ──────────────────
+  // Se a instância pertence a um cliente cadastrado, usa o agente genérico
+  // (estética etc.) e ignora as regras VELLO (demo, ALLOWED_WHATSAPP).
+  const clienteAgente = await getAgentePorInstancia(instance);
+  if (clienteAgente) {
+    if (messageType === "audioMessage") {
+      after(async () => {
+        try {
+          const base64 = await getMediaBase64(key.id, instance);
+          const textoTranscrito = await transcreverAudioBase64(base64, ".ogg");
+          await processarMensagemAgente(clienteAgente, whatsapp, textoTranscrito, pushName);
+        } catch (err) {
+          console.error(`[Webhook:${instance}] Erro no áudio:`, err);
+          await enviarMensagem(whatsapp, "Desculpe, não consegui entender seu áudio. Pode escrever? 🙏", instance);
+        }
+      });
+      return NextResponse.json({ received: true });
+    }
+
+    let textoCliente: string | null = null;
+    if (messageType === "conversation") textoCliente = message?.conversation ?? null;
+    else if (messageType === "extendedTextMessage") textoCliente = message?.extendedTextMessage?.text ?? null;
+
+    if (["imageMessage", "videoMessage", "documentMessage"].includes(messageType)) {
+      after(async () => { await enviarMensagem(whatsapp, MSG_MIDIA, instance); });
+      return NextResponse.json({ received: true });
+    }
+
+    if (!textoCliente?.trim()) return NextResponse.json({ received: true });
+
+    const txt = textoCliente.trim();
+    after(async () => { await processarMensagemAgente(clienteAgente, whatsapp, txt, pushName); });
+    return NextResponse.json({ received: true });
+  }
 
   // Roteamento para agentes demo — verificado ANTES do filtro ALLOWED_WHATSAPP
   const demoAgente = DEMO_WA_AGENTES.find((a) =>

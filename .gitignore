@@ -53,3 +53,7 @@ next-env.d.ts
 
 .vercel
 Microsoft/
+
+# supabase cli (estado local)
+.supabase/
+supabase/.temp/

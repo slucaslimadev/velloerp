@@ -29,23 +29,39 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isLoginPage = request.nextUrl.pathname === "/login";
-  const isPublicPath = request.nextUrl.pathname.startsWith("/_next") ||
-    request.nextUrl.pathname.startsWith("/api") ||
-    request.nextUrl.pathname.startsWith("/demo") ||
-    request.nextUrl.pathname === "/favicon.ico";
+  const path = request.nextUrl.pathname;
+  const role = (user?.app_metadata?.role as string | undefined) ?? "admin";
+  const isCliente = role === "cliente";
 
-  if (!isPublicPath && !user && !isLoginPage) {
+  const isPublicPath = path.startsWith("/_next") ||
+    path.startsWith("/api") ||
+    path.startsWith("/demo") ||
+    path === "/favicon.ico";
+
+  if (isPublicPath) return supabaseResponse;
+
+  const redirectTo = (pathname: string) => {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = pathname;
     return NextResponse.redirect(url);
+  };
+
+  // ── Área do portal (cliente) ────────────────────────────────────────────────
+  if (path.startsWith("/portal")) {
+    const isPortalLogin = path === "/portal/login";
+    if (!user && !isPortalLogin) return redirectTo("/portal/login");
+    if (user && isPortalLogin) return redirectTo("/portal");
+    return supabaseResponse;
   }
 
-  if (user && isLoginPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
-  }
+  // ── Área administrativa (ERP) ───────────────────────────────────────────────
+  const isLoginPage = path === "/login";
+
+  // Clientes não acessam o ERP — sempre vão para o portal
+  if (user && isCliente) return redirectTo("/portal");
+
+  if (!user && !isLoginPage) return redirectTo("/login");
+  if (user && isLoginPage) return redirectTo("/");
 
   return supabaseResponse;
 }

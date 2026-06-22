@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
@@ -362,8 +362,8 @@ export function CampanhasClient({ campanhasIniciais }: { campanhasIniciais: Item
                   const isOpen = expanded.has(c.id);
 
                   return (
-                    <>
-                      <tr key={c.id}
+                    <Fragment key={c.id}>
+                      <tr
                         onClick={() => toggleExpand(c.id)}
                         className="cursor-pointer transition-colors"
                         style={{ borderBottom: isOpen ? "none" : "1px solid var(--border-dim)" }}
@@ -405,7 +405,7 @@ export function CampanhasClient({ campanhasIniciais }: { campanhasIniciais: Item
                       {isOpen && (
                         <tr><td colSpan={8} style={{ height: 8, borderBottom: "1px solid var(--border-dim)" }} /></tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>

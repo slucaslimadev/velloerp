@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { isAdminRequest } from "@/lib/auth";
 
 function adminClient() {
   return createClient(
@@ -12,6 +13,7 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
+  if (!(await isAdminRequest())) return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
   const { id } = await params;
   try {
     const { error } = await adminClient().auth.admin.deleteUser(id);

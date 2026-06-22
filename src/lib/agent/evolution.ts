@@ -11,6 +11,11 @@ const api = axios.create({
 
 const INSTANCE = process.env.EVOLUTION_INSTANCE ?? "vello";
 
+/** Resolve a instância alvo: usa a informada ou cai no default da VELLO. */
+function inst(instance?: string): string {
+  return instance ?? INSTANCE;
+}
+
 async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -25,29 +30,30 @@ async function comRetry<T>(fn: () => Promise<T>, tentativas = 3, delayMs = 1000)
   }
 }
 
-export async function enviarMensagem(numero: string, texto: string): Promise<void> {
+export async function enviarMensagem(numero: string, texto: string, instance?: string): Promise<void> {
   await comRetry(async () => {
-    await api.post(`/message/sendText/${INSTANCE}`, {
+    await api.post(`/message/sendText/${inst(instance)}`, {
       number: numero,
       text: texto,
     });
   });
 }
 
-export async function enviarDigitando(numero: string, duracaoMs = 1500): Promise<void> {
+export async function enviarDigitando(numero: string, duracaoMs = 1500, instance?: string): Promise<void> {
   try {
-    await api.post(`/chat/sendPresence/${INSTANCE}`, {
+    await api.post(`/chat/sendPresence/${inst(instance)}`, {
       number: numero,
-      options: { presence: "composing", delay: duracaoMs },
+      presence: "composing",
+      delay: duracaoMs,
     });
   } catch {
     // Não crítico — ignora erro
   }
 }
 
-export async function getMediaBase64(messageId: string): Promise<string> {
+export async function getMediaBase64(messageId: string, instance?: string): Promise<string> {
   try {
-    const response = await api.post(`/chat/getBase64FromMediaMessage/${INSTANCE}`, {
+    const response = await api.post(`/chat/getBase64FromMediaMessage/${inst(instance)}`, {
       message: { key: { id: messageId } },
     });
     return response.data.base64;

@@ -14,6 +14,8 @@ import {
   Robot,
   MegaphoneSimple,
   Crosshair,
+  ListChecks,
+  Storefront,
 } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 import { VelloLogo } from "@/components/shared/VelloLogo";
@@ -23,12 +25,15 @@ const navItems = [
   { href: "/leads",         label: "Leads",        icon: Users         },
   { href: "/kanban",        label: "Kanban",       icon: Kanban        },
   { href: "/clientes",      label: "Clientes",     icon: Briefcase     },
+  { href: "/tarefas",       label: "Tarefas",      icon: ListChecks    },
   { href: "/campanhas",     label: "Campanhas",    icon: MegaphoneSimple },
   { href: "/prospeccao",   label: "Prospecção",   icon: Crosshair       },
   { href: "/conversas",     label: "Conversas",    icon: ChatCircleDots},
+  { href: "/agentes-clientes", label: "Agentes Clientes", icon: Storefront },
   { href: "/agentes",       label: "Agentes Demo", icon: Robot         },
   { href: "/configuracoes", label: "Configurações",icon: Gear          },
 ];
+
 
 interface SidebarProps {
   onClose?: () => void;
@@ -75,7 +80,9 @@ export function Sidebar({ onClose }: SidebarProps) {
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map(({ href, label, icon: Icon }) => {
           const active =
-            href === "/" ? pathname === "/" : pathname.startsWith(href);
+            href === "/"
+              ? pathname === "/"
+              : pathname === href || pathname.startsWith(href + "/");
           return (
             <Link
               key={href}

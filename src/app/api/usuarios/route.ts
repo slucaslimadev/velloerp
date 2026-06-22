@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { isAdminRequest } from "@/lib/auth";
 
 function adminClient() {
   return createClient(
@@ -9,6 +10,7 @@ function adminClient() {
 }
 
 export async function GET(): Promise<NextResponse> {
+  if (!(await isAdminRequest())) return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
   try {
     const { data, error } = await adminClient().auth.admin.listUsers();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -26,6 +28,7 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  if (!(await isAdminRequest())) return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
   const { email, password } = await req.json();
   if (!email || !password) {
     return NextResponse.json({ error: "Email e senha são obrigatórios" }, { status: 400 });

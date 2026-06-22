@@ -4,7 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ArrowLeft, Gear, PaperPlaneRight, X } from "@phosphor-icons/react";
+import { ArrowLeft, Gear, PaperPlaneRight, X, Microphone, Stop, CircleNotch } from "@phosphor-icons/react";
+
+const BUFFER_MS = 5000;
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onloadend = () => resolve((r.result as string).split(",")[1]);
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+}
 import type { ChatMessage } from "@/app/api/agentes/chat/route";
 import type { AgenteConfig } from "@/lib/agentes/config";
 
@@ -25,6 +36,19 @@ export function ChatClient({ agente, isPublic = false }: { agente: AgenteConfig;
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Buffer de mensagens: junta mensagens enviadas em sequência (até 5s) e responde de uma vez.
+  const messagesRef = useRef<ChatMessage[]>([]);
+  const bufferTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [buffering, setBuffering] = useState(false);
+
+  // Áudio
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const [recording, setRecording] = useState(false);
+  const [transcrevendo, setTranscrevendo] = useState(false);
+
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+
   useEffect(() => {
     const saved = localStorage.getItem(`agent_prompt_${agente.slug}`);
     if (saved) setSystemPromptOverride(saved);
@@ -32,23 +56,17 @@ export function ChatClient({ agente, isPublic = false }: { agente: AgenteConfig;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+  }, [messages, loading, buffering]);
 
-  async function sendMessage() {
-    const texto = input.trim();
-    if (!texto || loading) return;
-
-    const userMsg: ChatMessage = { role: "user", content: texto };
-    const nextMessages = [...messages, userMsg];
-    setMessages(nextMessages);
-    setInput("");
+  async function flush() {
+    if (bufferTimer.current) { clearTimeout(bufferTimer.current); bufferTimer.current = null; }
+    setBuffering(false);
     setLoading(true);
-
     try {
       const res = await fetch("/api/agentes/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: agente.slug, messages: nextMessages, systemPromptOverride }),
+        body: JSON.stringify({ slug: agente.slug, messages: messagesRef.current, systemPromptOverride }),
       });
       const json = await res.json();
       if (json.resposta) {
@@ -62,6 +80,62 @@ export function ChatClient({ agente, isPublic = false }: { agente: AgenteConfig;
       setMessages((prev) => [...prev, { role: "assistant", content: "Desculpe, ocorreu um erro. Tente novamente." }]);
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Adiciona a mensagem e (re)agenda o flush para daqui a 5s.
+  function enqueueMessage(msg: ChatMessage) {
+    setMessages((prev) => [...prev, msg]);
+    if (bufferTimer.current) clearTimeout(bufferTimer.current);
+    setBuffering(true);
+    bufferTimer.current = setTimeout(() => { flush(); }, BUFFER_MS);
+  }
+
+  function sendMessage() {
+    const texto = input.trim();
+    if (!texto || loading) return;
+    enqueueMessage({ role: "user", content: texto });
+    setInput("");
+  }
+
+  async function toggleRecord() {
+    if (recording) { mediaRecorderRef.current?.stop(); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setRecording(false);
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        await transcreverEnviar(blob);
+      };
+      mediaRecorderRef.current = mr;
+      mr.start();
+      setRecording(true);
+    } catch {
+      alert("Não consegui acessar o microfone.");
+    }
+  }
+
+  async function transcreverEnviar(blob: Blob) {
+    if (blob.size === 0) return;
+    setTranscrevendo(true);
+    try {
+      const base64 = await blobToBase64(blob);
+      const res = await fetch("/api/agentes/processar-arquivo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo: "audio", base64, ext: ".webm", nome: "áudio" }),
+      });
+      const json = await res.json();
+      if (json.texto) enqueueMessage({ role: "user", content: `🎤 ${json.texto}` });
+      else alert("Não consegui entender o áudio. Tente novamente.");
+    } catch {
+      alert("Erro ao processar o áudio.");
+    } finally {
+      setTranscrevendo(false);
     }
   }
 
@@ -164,7 +238,7 @@ export function ChatClient({ agente, isPublic = false }: { agente: AgenteConfig;
           </div>
         ))}
 
-        {loading && (
+        {(loading || buffering) && (
           <div className="flex justify-start items-end gap-2">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
               style={{ background: `${agente.cor}18` }}>
@@ -184,11 +258,25 @@ export function ChatClient({ agente, isPublic = false }: { agente: AgenteConfig;
 
       <div className="flex items-end gap-2 px-4 py-3 flex-shrink-0"
         style={{ borderTop: "1px solid var(--border-dim)", background: "var(--bg-surface)" }}>
-        <textarea value={input} onChange={(e) => setInput(e.target.value)} placeholder="Digite uma mensagem..."
+        <textarea value={input} onChange={(e) => setInput(e.target.value)}
+          placeholder={recording ? "Gravando áudio..." : transcrevendo ? "Transcrevendo..." : "Digite uma mensagem..."}
           rows={1} disabled={loading}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
           className="flex-1 rounded-xl px-3 py-2 text-sm outline-none resize-none"
           style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-dim)", color: "var(--text-1)", fontFamily: "var(--ff-body)", maxHeight: 120 }} />
+
+        <button onClick={toggleRecord} disabled={transcrevendo}
+          className="p-2 rounded-xl flex-shrink-0 disabled:opacity-40"
+          title={recording ? "Parar gravação" : "Gravar áudio"}
+          style={{
+            background: recording ? "rgba(239,68,68,0.15)" : "var(--bg-elevated)",
+            border: `1px solid ${recording ? "rgba(239,68,68,0.4)" : "var(--border-dim)"}`,
+            color: recording ? "#EF4444" : "var(--text-2)",
+          }}>
+          {transcrevendo ? <CircleNotch size={18} className="animate-spin" />
+            : recording ? <Stop size={18} weight="fill" />
+            : <Microphone size={18} />}
+        </button>
 
         <button onClick={sendMessage} disabled={loading || !input.trim()}
           className="p-2 rounded-xl flex-shrink-0 disabled:opacity-40"
