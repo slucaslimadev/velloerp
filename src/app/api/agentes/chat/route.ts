@@ -1,45 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
 import { getAgente } from "@/lib/agentes/config";
+import { openrouterClient, toOpenRouterModel } from "@/lib/openrouter";
 import type { ChatCompletionMessageParam, ChatCompletionContentPart } from "openai/resources";
 
-let _gemini: OpenAI | null = null;
-let _openrouter: OpenAI | null = null;
-
-// Modelo com "/" (ex: google/gemini-2.5-flash) → OpenRouter; senão → Gemini direto.
-function isOpenRouter(modelo: string): boolean {
-  return modelo.includes("/");
-}
-
-function ai(modelo: string): OpenAI {
-  if (isOpenRouter(modelo)) {
-    if (!_openrouter) {
-      _openrouter = new OpenAI({
-        apiKey: process.env.OPENROUTER_API_KEY?.trim(),
-        baseURL: "https://openrouter.ai/api/v1",
-        defaultHeaders: {
-          "HTTP-Referer": "https://sistema.velloia.com.br",
-          "X-Title": "Vello ERP",
-        },
-      });
-    }
-    return _openrouter;
-  }
-  if (!_gemini) {
-    _gemini = new OpenAI({
-      apiKey: process.env.GEMINI_API_KEY?.trim(),
-      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-    });
-  }
-  return _gemini;
-}
-
-const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+const DEFAULT_MODEL = "google/gemini-2.5-flash";
 
 function normalizeModel(modelo?: string): string {
-  if (!modelo) return DEFAULT_GEMINI_MODEL;
-  if (modelo.includes("/") || modelo.startsWith("gemini-")) return modelo;
-  return DEFAULT_GEMINI_MODEL;
+  return toOpenRouterModel(modelo || DEFAULT_MODEL);
 }
 
 function buildCurrentDateContext(): string {
@@ -148,7 +115,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const openaiMessages = buildOpenAIMessages(systemPrompt, messages);
 
   try {
-    const completion = await ai(modelo).chat.completions.create({
+    const completion = await openrouterClient().chat.completions.create({
       model: modelo,
       messages: openaiMessages,
       max_tokens: 1500,

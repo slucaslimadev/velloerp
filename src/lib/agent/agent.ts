@@ -1,4 +1,3 @@
-import OpenAI from "openai";
 import type { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources";
 import {
   getOrCreateConversa,
@@ -11,18 +10,12 @@ import {
 import { enviarMensagem, enviarDigitando, enviarAlerta } from "./evolution";
 import { DEMO_WA_AGENTES, processarMensagemDemoWa, normWA } from "./demo-wa-agentes";
 import type { DadosLead, Mensagem } from "./types";
+import { openrouterClient, toOpenRouterModel } from "@/lib/openrouter";
 
-let _openai: OpenAI | null = null;
 function getOpenAI() {
-  if (!_openai) {
-    _openai = new OpenAI({
-      apiKey: process.env.GEMINI_API_KEY,
-      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-    });
-  }
-  return _openai;
+  return openrouterClient();
 }
-const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+const MODEL = toOpenRouterModel(process.env.GEMINI_MODEL ?? "gemini-2.5-flash");
 
 async function comRetry<T>(fn: () => Promise<T>, tentativas = 3, delayMs = 1000): Promise<T> {
   try {

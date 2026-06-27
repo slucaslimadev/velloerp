@@ -1,20 +1,14 @@
-import OpenAI from "openai";
 import type { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources";
 import { getOrCreateConversa, updateHistorico } from "./supabase";
 import { enviarMensagem, enviarDigitando, enviarImagem } from "./evolution";
 import type { Mensagem } from "./types";
 
-let _openai: OpenAI | null = null;
+import { openrouterClient, toOpenRouterModel } from "@/lib/openrouter";
+
 function getOpenAI() {
-  if (!_openai) {
-    _openai = new OpenAI({
-      apiKey: process.env.GEMINI_API_KEY,
-      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-    });
-  }
-  return _openai;
+  return openrouterClient();
 }
-const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
 
 // ─── Normalização de número WA ────────────────────────────────────────────────
 
@@ -174,7 +168,7 @@ export async function processarMensagemDemoWa(
 
   try {
     const response = await getOpenAI().chat.completions.create({
-      model: agente.modelo,
+      model: toOpenRouterModel(agente.modelo),
       messages,
       tools: agente.tools,
       tool_choice: "auto",
@@ -205,7 +199,7 @@ export async function processarMensagemDemoWa(
       // Segunda chamada para obter a resposta textual após os tools
       await enviarDigitando(whatsapp);
       const response2 = await getOpenAI().chat.completions.create({
-        model: agente.modelo,
+        model: toOpenRouterModel(agente.modelo),
         messages: [...messages, ...toolResults],
         temperature: 0.7,
         max_tokens: 500,

@@ -1,4 +1,3 @@
-import OpenAI from "openai";
 import type { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources";
 import { getOrCreateConversa, updateHistorico } from "./supabase";
 import { enviarMensagem, enviarDigitando } from "./evolution";
@@ -12,12 +11,10 @@ import {
   getIntegracaoGoogle,
 } from "./clientes-agentes";
 import { criarEventoCalendar } from "@/lib/google";
+import { openrouterClient, toOpenRouterModel } from "@/lib/openrouter";
 import type { Mensagem } from "./types";
 
-const openai = new OpenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-});
+const openai = openrouterClient();
 
 async function comRetry<T>(fn: () => Promise<T>, tentativas = 3, delayMs = 1000): Promise<T> {
   try {
@@ -232,7 +229,7 @@ export async function processarMensagemAgente(
   try {
     const response = await comRetry(() =>
       openai.chat.completions.create({
-        model: agente.modelo,
+        model: toOpenRouterModel(agente.modelo),
         messages,
         ...(tools.length ? { tools, tool_choice: "auto" as const } : {}),
         temperature: agente.temperatura,
@@ -259,7 +256,7 @@ export async function processarMensagemAgente(
         ];
         const final = await comRetry(() =>
           openai.chat.completions.create({
-            model: agente.modelo,
+            model: toOpenRouterModel(agente.modelo),
             messages: messages2,
             temperature: agente.temperatura,
             max_tokens: agente.max_tokens,
